@@ -1,0 +1,47 @@
+[
+  {
+    "model": "testapp.customer",
+    "pk": 1,
+    "fields": {
+      "company": 1,
+      "customer_id": 10,
+      "name": "plop SARL"
+    }
+  },
+  {
+    "model": "testapp.customer",
+    "pk": 2,
+    "fields": {
+      "company": 1,
+      "customer_id": 20,
+      "name": "moiraine & cie"
+    }
+  },
+  {
+    "model": "testapp.customer",
+    "pk": 3,
+    "fields": {
+      "company": 2,
+      "customer_id": 10,
+      "name": "moiraine & cie"
+    }
+  },
+  {
+    "model": "testapp.contact",
+    "pk": 1,
+    "fields": {
+      "company_code": 2,
+      "customer_code": 10,
+      "surname": "moiraine the witch"
+    }
+  },
+  {
+    "model": "testapp.contact",
+    "pk": 2,
+    "fields": {
+      "company_code": 1,
+      "customer_code": 10,
+      "surname": "M. plop"
+    }
+  }
+]
