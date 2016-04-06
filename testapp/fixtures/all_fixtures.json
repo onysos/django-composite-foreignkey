@@ -43,5 +43,38 @@
       "customer_code": 10,
       "surname": "M. plop"
     }
+  },
+  {
+    "model": "testapp.Address",
+    "pk": 1,
+    "fields": {
+      "company": 1,
+      "tiers_id": 10,
+      "type_tiers": "C",
+      "city": "tear",
+      "postcode": "00111"
+    }
+  },
+  {
+    "model": "testapp.Address",
+    "pk": 2,
+    "fields": {
+      "company": 1,
+      "tiers_id": 10,
+      "type_tiers": "S",
+      "city": "caemlyn",
+      "postcode": "02441"
+    }
+  },
+  {
+    "model": "testapp.Address",
+    "pk": 3,
+    "fields": {
+      "company": 2,
+      "tiers_id": 10,
+      "type_tiers": "C",
+      "city": "tear",
+      "postcode": "00111"
+    }
   }
 ]
