@@ -12,19 +12,23 @@ python:
 
 # Django versions for matrix
 env:
-  - DJANGO_VERSION='>=1.8,<1.9'
-  - DJANGO_VERSION='>=1.9,<1.10'
+  - TOX_ENV="py27-django18"
+  - TOX_ENV="py32-django18"
+  - TOX_ENV="py33-django18"
+  - TOX_ENV="py34-django18"
+  - TOX_ENV="py27-django19"
+  - TOX_ENV="py34-django19"
+  - TOX_ENV="py35-django19"
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install -q Django$DJANGO_VERSION --use-mirrors --quiet
-  - pip install coveralls
+  - pip install tox coveralls
   # virtualenv>=14.0.0 has dropped Python 3.2 support
   - travis_retry pip install "virtualenv<14.0.0" "tox>=1.9"
 
 # Command to run tests, e.g. python setup.py test
 script:
-  - coverage run --source=testapp,compositefk manage.py test
+  - tox -e $TOX_ENV
 
 
 # Report to coveralls
