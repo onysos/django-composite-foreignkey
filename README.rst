@@ -21,7 +21,9 @@ allow to create a django foreignkey that don't link with pk of other model, but 
 
 some databases have a composite Primary Key, leading to impossiblity for a django foreign key to be used.
 
-today, Django don't support Composite Primary Key ([see ticket](https://code.djangoproject.com/wiki/MultipleColumnPrimaryKeys)) and thus don't support composite foreignkey.
+today, Django don't support Composite Primary Key `see ticket <https://code.djangoproject.com/wiki/MultipleColumnPrimaryKeys>`_ and ForeignKey don't support multicolumn.
+but fortunaly, the base class of ForeignKey support it well, so this lib just add a little wrapper around ForeignObject to make it more usefull.
+the real add of this implementation is that is support the customisation of the link with Raw values.
 
 this implementation of CompositeForeignKey skip the complexity of Composite Primary Key by forcing the providing of the corresponding column of the other model, not forcefully a PrimaryKey.
 
@@ -48,24 +50,33 @@ you have this model :
 
 .. code: python
 
+
     class Customer(models.Model):
 
         company = models.IntegerField()
         customer_id = models.IntegerField()
         name = models.CharField(max_length=255)
+        address = CompositeForeignKey(Address, on_delete=CASCADE, to_fields={
+            "tiers_id": "customer_id",
+            "company": LocalFieldValue("company"),
+            "type_tiers": RawFieldValue("C")
+        })
 
-        class Meta:
-            unique_togeteh = [
+        class Meta(object):
+            unique_together = [
                 ("company", "customer_id"),
             ]
+
 
     class Contact(models.Model):
         company_code = models.IntegerField()
         customer_code = models.IntegerField()
         surname = models.CharField(max_length=255)
-
         # virtual field
-        customer = CompositeForeignKey(Customer, fields={"customer_code": "customer_id", "company_code": "company"})
+        customer = CompositeForeignKey(Customer, on_delete=CASCADE, related_name='contacts', to_fields={
+            "customer_id": "customer_code",
+            "company": "company_code"
+        })
 
 
 you can use Contact.customer like any ForeignKey, but behinde the scene, it will query the Customer Table using company and customer id's.
