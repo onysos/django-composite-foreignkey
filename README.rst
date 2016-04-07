@@ -10,6 +10,9 @@ allow to create a django foreignkey that don't link with pk of other model, but 
 .. image:: https://img.shields.io/travis/onysos/django-composite-foreignkey/master.svg
     :target: https://travis-ci.org/onysos/django-composite-foreignkey
 
+.. image:: https://readthedocs.org/projects/django-composite-foreignkey/badge/?version=latest
+    :target: http://django-composite-foreignkey.readthedocs.org/en/latest/
+
 .. image:: https://img.shields.io/coveralls/onysos/django-composite-foreignkey/master.svg
   :target: https://coveralls.io/r/onysos/django-composite-foreignkey?branch=master
 
@@ -20,6 +23,7 @@ allow to create a django foreignkey that don't link with pk of other model, but 
 .. image:: https://img.shields.io/pypi/dm/django-composite-foreignkey.svg
     :target: https://pypi.python.org/pypi/django-composite-foreignkey
     :alt: Number of PyPI downloads per month
+
 
 some databases have a composite Primary Key, leading to impossiblity for a django foreign key to be used.
 
@@ -84,7 +88,7 @@ you can use Contact.customer like any ForeignKey, but behinde the scene, it will
 Documentation
 -------------
 
-This readme provide the main doc : an working exemple and a demo app
+The full documentation is at http://django-composite-foreignkey.readthedocs.org/en/latest/.
 
 
 Requirements
