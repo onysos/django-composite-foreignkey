@@ -52,7 +52,7 @@ Example template
 
 you have this model
 
-    .. code:: python
+.. code:: python
 
     class Customer(models.Model):
 
@@ -111,9 +111,7 @@ https://github.com/onysos/django-composite-foreignkey/issues
 License
 -------
 
-You can use this under GPLv3. See `LICENSE
-<LICENSE>`_ file for details.
-
+You can use this under GPLv3.
 
 Author
 ------
