@@ -8,10 +8,18 @@ import logging
 from django.apps import apps
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.loader import MigrationLoader
-from django.db.migrations.questioner import NonInteractiveMigrationQuestioner
+try:
+    from django.db.migrations.questioner import NonInteractiveMigrationQuestioner
+except ImportError:
+    from django.db.migrations.questioner import MigrationQuestioner as NonInteractiveMigrationQuestioner
+
 from django.db.migrations.state import ProjectState
 from django.db.migrations.writer import MigrationWriter
-from django.db.models.fields.reverse_related import ForeignObjectRel
+try:
+    from django.db.models.fields.reverse_related import ForeignObjectRel
+except ImportError:
+    from django.db.models.fields.related import ForeignObjectRel
+
 from django.test.testcases import TestCase
 
 from compositefk.fields import CompositeForeignKey

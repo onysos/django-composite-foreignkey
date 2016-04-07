@@ -12,10 +12,11 @@ __author__ = 'darius.bernard'
 
 
 class CompositeForeignKey(ForeignObject):
-    def __init__(self, to, on_delete, to_fields, **kwargs):
+    def __init__(self, to, **kwargs):
         """
         create the ForeignObject, but use the to_fields as a dict which will later used as form_fields and to_fields
         """
+        to_fields = kwargs["to_fields"]
         self._raw_fields = self.compute_to_fields(to_fields)
         kwargs["to_fields"], kwargs["from_fields"] = zip(*(
             (k, v.value)
@@ -23,7 +24,7 @@ class CompositeForeignKey(ForeignObject):
             if v.is_local_field
         ))
 
-        super(CompositeForeignKey, self).__init__(to, on_delete, **kwargs)
+        super(CompositeForeignKey, self).__init__(to, **kwargs)
 
     def deconstruct(self):
         name, path, args, kwargs = super(CompositeForeignKey, self).deconstruct()
@@ -37,10 +38,15 @@ class CompositeForeignKey(ForeignObject):
             if isinstance(v, RawFieldValue)
             }
 
+
     @property
     def foreign_related_fields(self):
+        try:
+            remote_model = self.remote_field.model
+        except AttributeError:
+            remote_model = self.rel.to
         return tuple(
-            self.remote_field.model._meta.get_field(rhs_field)
+            remote_model._meta.get_field(rhs_field)
             for rhs_field in self._raw_fields.keys()
         )
 
