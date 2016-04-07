@@ -1,6 +1,23 @@
 # django-composite-foreignkey
 
+
+
 allow to create a django foreignkey that don't link with pk of other model, but with multi column matching local model columns or fixed values.
+
+
+.. image:: https://img.shields.io/travis/onysos/django-composite-foreignkey/master.svg
+    :target: https://travis-ci.org/onysos/django-composite-foreignkey
+
+.. image:: https://img.shields.io/coveralls/onysos/django-composite-foreignkey/master.svg
+  :target: https://coveralls.io/r/onysos/django-composite-foreignkey?branch=master
+
+.. image:: https://img.shields.io/pypi/v/django-composite-foreignkey.svg
+    :target: https://pypi.python.org/pypi/django-composite-foreignkey
+    :alt: Latest PyPI version
+
+.. image:: https://img.shields.io/pypi/dm/django-composite-foreignkey.svg
+    :target: https://pypi.python.org/pypi/django-composite-foreignkey
+    :alt: Number of PyPI downloads per month
 
 some databases have a composite Primary Key, leading to impossiblity for a django foreign key to be used.
 
@@ -93,4 +110,4 @@ Original author & Development lead: `Darius BERNARD <https://github.com/ornoone>
 Thanks
 ------
 
-Thanks to django for this amazing framework. And thanks to django-bootstrap3 to the structure of the apps.
+Thanks to django for this amazing framework. And thanks to django-composite-foreignkey to the structure of the apps.
