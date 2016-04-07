@@ -12,9 +12,6 @@ python:
 
 # Django versions for matrix
 env:
-  - DJANGO_VERSION='>=1.4,<1.5'
-  - DJANGO_VERSION='>=1.5,<1.6'
-  - DJANGO_VERSION='>=1.6,<1.7'
   - DJANGO_VERSION='>=1.7,<1.8'
   - DJANGO_VERSION='>=1.8,<1.9'
 
