@@ -5,7 +5,6 @@ sudo: false
 language: python
 python:
   - "2.7"
-  - "3.2"
   - "3.3"
   - "3.4"
   - "3.5"
@@ -18,9 +17,6 @@ env:
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
   - pip install -q Django$DJANGO_VERSION --use-mirrors --quiet
-  # Coverage 4.0 no longer supports py32. Install an older version before
-  # coveralls tries to install the latest
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.2' ]]; then travis_retry pip install 'coverage<4.0'; fi
   - pip install coveralls
 
 # Command to run tests, e.g. python setup.py test
