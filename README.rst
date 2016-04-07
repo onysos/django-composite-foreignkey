@@ -38,20 +38,21 @@ Installation
 
    Alternatively, you can install download or clone this repo and call ``pip install -e .``.
 
-3. In your models, set up all your real field, then add a `virtual` one giving the foreignkey
-```
-customer = CompositeForeignKey(Customer, fields={"customer_code": "customer_id", "company_code": "company"})
-```
+2. In your models, set up all your real field, then add a `virtual` one giving the foreignkey
+
+.. code:: python
+
+    customer = CompositeForeignKey(Customer, fields={"customer_code": "customer_id", "company_code": "company"})
+
 
 
 Example template
 ----------------
 
 
-you have this model :
+you have this model
 
-.. code: python
-
+    .. code:: python
 
     class Customer(models.Model):
 
@@ -93,7 +94,7 @@ This readme provide the main doc : an working exemple and a demo app
 Requirements
 ------------
 
-- Python 2.7, 3.2, 3.3, 3.4
+- Python 2.7, 3.2, 3.3, 3.4, 3.5
 - Django >= 1.8
 
 Contributions and pull requests for other Django and Python versions are welcome.
@@ -123,4 +124,4 @@ Original author & Development lead: `Darius BERNARD <https://github.com/ornoone>
 Thanks
 ------
 
-Thanks to django for this amazing framework. And thanks to django-composite-foreignkey to the structure of the apps.
+Thanks to django for this amazing framework. And thanks to django-bootstrap3 to the structure of the apps.
