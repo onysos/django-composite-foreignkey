@@ -36,18 +36,14 @@ Installation
 
    ``pip install django-composite-foreignkey``
 
-   Alternatively, you can install download or clone this repo and call ``pip install -e .``.
+2. Alternatively, you can install download or clone this repo and call
 
-2. In your models, set up all your real field, then add a `virtual` one giving the foreignkey
-
-.. code:: python
-
-    customer = CompositeForeignKey(Customer, fields={"customer_code": "customer_id", "company_code": "company"})
+    ``pip install -e .``.
 
 
 
-Example template
-----------------
+Example
+-------
 
 
 you have this model

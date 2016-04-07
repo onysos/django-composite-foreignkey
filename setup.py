@@ -34,7 +34,7 @@ setup(
     long_description=readme,
     author='Darius BERNARD',
     author_email='contact@xornot.fr',
-    url='https://github.com/ornoone/django-composite-foreignkey',
+    url='https://github.com/onysos/django-composite-foreignkey',
     packages=[
         'compositefk',
     ],

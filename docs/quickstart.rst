@@ -139,5 +139,5 @@ Test application
 
 The test application provides a number of useful examples.
 
-https://github.com/dyve/django-composite-foreignkey/tree/master/testapp/
+https://github.com/onysos/django-composite-foreignkey/tree/master/testapp/
 
