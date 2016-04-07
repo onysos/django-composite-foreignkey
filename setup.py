@@ -24,7 +24,7 @@ if sys.argv[-1] == 'publish':
     print("  git push --tags")
     sys.exit()
 
-with open('README.md') as readme_file:
+with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 setup(
