@@ -27,6 +27,24 @@
     }
   },
   {
+    "model": "testapp.customer",
+    "pk": 4,
+    "fields": {
+      "company": 2,
+      "customer_id": -1,
+      "name": "no addr1"
+    }
+  },
+  {
+    "model": "testapp.customer",
+    "pk": 5,
+    "fields": {
+      "company": -1,
+      "customer_id": 10,
+      "name": "no addr2"
+    }
+  },
+  {
     "model": "testapp.contact",
     "pk": 1,
     "fields": {
@@ -74,6 +92,17 @@
       "tiers_id": 10,
       "type_tiers": "C",
       "city": "tear",
+      "postcode": "00111"
+    }
+  },
+  {
+    "model": "testapp.Address",
+    "pk": 3,
+    "fields": {
+      "company": -1,
+      "tiers_id": 10,
+      "type_tiers": "C",
+      "city": "neverworld",
       "postcode": "00111"
     }
   }

@@ -33,11 +33,14 @@ class Customer(models.Model):
     company = models.IntegerField()
     customer_id = models.IntegerField()
     name = models.CharField(max_length=255)
-    address = CompositeForeignKey(Address, on_delete=CASCADE, to_fields={
+    address = CompositeForeignKey(Address, on_delete=CASCADE, null=True, to_fields={
         "tiers_id": "customer_id",
         "company": LocalFieldValue("company"),
         "type_tiers": RawFieldValue("C")
-    })
+    }, null_if_equal=[ # if either of the fields company or customer is -1, ther can't have address
+        ("company", -1),
+        ("customer_id", -1 )
+    ])
 
     class Meta(object):
         unique_together = [

@@ -134,6 +134,44 @@ so the class Supplier could be wrote:
         })
 
 
+Treate specific values as None
+------------------------------
+
+sometimes, some database is broken and some values should be treated as None to make sur
+no query will be made. ie if company code is «-1» instead of None, the query shall not seach for related model
+with company = -1 since this is an old aplicative exception.
+
+you just have one thing to do that : null_if_equal
+
+.. code:: python
+
+    class Customer(models.Model):
+
+        company = models.IntegerField()
+        customer_id = models.IntegerField()
+        name = models.CharField(max_length=255)
+        address = CompositeForeignKey(Address, on_delete=CASCADE, null=True, to_fields={
+            "tiers_id": "customer_id",
+            "company": LocalFieldValue("company"),
+            "type_tiers": RawFieldValue("C")
+        }, null_if_equal=[ # if either of the fields company or customer is -1, ther can't have address
+            ("company", -1),
+            ("customer_id", -1 )
+        ])
+
+in this exemple, if company is -1, OR customer_id is -1 too, no query will be made and custome.address will be equal to None.
+it is the same behavior as if a normal foreignkey address had address_id = None.
+
+.. note::
+
+    you must allow null value to permit that (which will not have any impact on database).
+
+.. note::
+
+    these cases should not be possible on database that use ForeignKey constraint. but with some legacy database that won't,
+    this feathure is mandatory to bypass the headarch comming with broken logic on special values.
+
+
 Test application
 ----------------
 

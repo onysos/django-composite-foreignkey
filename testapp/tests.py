@@ -6,13 +6,16 @@ from __future__ import unicode_literals, print_function, absolute_import
 import logging
 
 from django.apps import apps
+from django.conf import settings
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.loader import MigrationLoader
+from django.db.models.deletion import CASCADE
+
 try:
     from django.db.migrations.questioner import NonInteractiveMigrationQuestioner
 except ImportError:
     from django.db.migrations.questioner import MigrationQuestioner as NonInteractiveMigrationQuestioner
-
+from django.core import checks
 from django.db.migrations.state import ProjectState
 from django.db.migrations.writer import MigrationWriter
 try:
@@ -21,8 +24,8 @@ except ImportError:
     from django.db.models.fields.related import ForeignObjectRel
 
 from django.test.testcases import TestCase
-
-from compositefk.fields import CompositeForeignKey
+from django.db import models
+from compositefk.fields import CompositeForeignKey, RawFieldValue
 from testapp.models import Customer, Contact, Address
 
 logger = logging.getLogger(__name__)
@@ -92,6 +95,8 @@ class TestForeignKeyStruct(TestCase):
         l2 = Customer._meta.get_fields()
         self.assertIn("contacts", [field.name for field in l2])
 
+        self.assertIsNone(f.db_type(None))
+
 
 class TestLookupQuery(TestCase):
     fixtures = ["all_fixtures.json"]
@@ -115,6 +120,22 @@ class TestExtraFilterRawValue(TestCase):
         address = Address.objects.get(pk=1)
         self.assertEqual(customer.address, address)
 
+class TestNullIfEqual(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    def test_exist_fq_null_if_company_bad(self):
+        # test that fk is None even if addr exist,
+        # but the company is '   ' and this is bad
+        c = Customer.objects.get(pk=4)
+        self.assertIsNone(c.address)
+
+    def test_notexist_fq_null_if_company_bad(self):
+        # test that fk is None. the addr don't exists in base
+        # (bad but possible with bad database schema (legacy))
+
+        c = Customer.objects.get(pk=5)
+        self.assertIsNone(c.address)
+
 
 class TestDeconstuct(TestCase):
     def test_deconstruct(self):
@@ -126,6 +147,28 @@ class TestDeconstuct(TestCase):
     def test_reconstruct(self):
         name, path, args, kwargs = Contact._meta.get_field("customer").deconstruct()
         CompositeForeignKey(*args, **kwargs)
+
+    def test_models_check(self):
+        self.maxDiff = None
+        app_configs = [apps.get_app_config("testapp")]
+        all_issues = checks.run_checks(
+            app_configs=app_configs,
+            tags=None,
+            include_deployment_checks=False,
+        )
+        self.assertListEqual(all_issues, [])
+
+
+    def test_field_check_errors(self):
+        with self.settings(INSTALLED_APPS=settings.INSTALLED_APPS + ("broken_test_app",)):
+            self.maxDiff = None
+            app_configs = [apps.get_app_config("broken_test_app")]
+            all_issues = checks.run_checks(
+                app_configs=app_configs,
+                tags=None,
+                include_deployment_checks=False,
+            )
+            self.assertListEqual([issue.id for issue in all_issues], ['compositefk.E001', 'compositefk.E002', 'compositefk.E003', 'compositefk.E003', 'compositefk.E004' ])
 
     def test_total_deconstruct(self):
         loader = MigrationLoader(None, load=True, ignore_no_migrations=True)
