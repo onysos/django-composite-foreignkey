@@ -8,6 +8,13 @@ from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObject
 
+try:
+    from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
+except ImportError:
+    from django.db.models.fields.related import SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor
+
+from django.utils.translation import ugettext_lazy as _
+
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
 
@@ -127,12 +134,14 @@ class CompositeForeignKey(ForeignObject):
     def compute_to_fields(self, to_fields):
         """
         compute the to_fields parameterse to make it uniformly a dict of CompositePart
+        :param set[unicode]|dict[unicode, unicode] to_fields: the list/dict of fields to match
         :return: the well formated to_field containing only subclasses of CompositePart
         :rtype: dict[str, CompositePart]
         """
+
         return {
             k: (v if isinstance(v, CompositePart) else LocalFieldValue(v))
-            for k, v in to_fields.items()
+            for k, v in (to_fields.items() if isinstance(to_fields, dict) else zip(to_fields, to_fields))
             }
 
     def db_type(self, connection):
@@ -159,6 +168,37 @@ class CompositeForeignKey(ForeignObject):
                     # we have field_name that is equal to the bad value
                     return (None,) # currently, it is enouth since the django implementation check at first if there is a None in the result
         return res
+
+class CompositeOneToOneField(CompositeForeignKey):
+    # Field flags
+    many_to_many = False
+    many_to_one = False
+    one_to_many = False
+    one_to_one = True
+
+    related_accessor_class = ReverseOneToOneDescriptor
+
+    description = _("One-to-one relationship")
+
+    def __init__(self, to, **kwargs):
+        kwargs['unique'] = True
+        # kwargs['rel'] = OneToOneRel(
+        #     self, to,
+        #     related_name=kwargs.get('related_name', None),
+        #     related_query_name=kwargs.get('related_query_name', None),
+        #     limit_choices_to=kwargs.get('limit_choices_to', None),
+        #     parent_link=kwargs.get('parent_link', False),
+        #     on_delete=kwargs.get('on_delete', CASCADE),
+        # )
+        super(CompositeOneToOneField, self).__init__(to, **kwargs)
+        self.rel.multiple = False
+
+    def deconstruct(self):
+        name, path, args, kwargs = super(CompositeOneToOneField, self).deconstruct()
+        if "unique" in kwargs:
+            del kwargs['unique']
+        return name, path, args, kwargs
+
 
 class CompositePart(object):
     is_local_field = True

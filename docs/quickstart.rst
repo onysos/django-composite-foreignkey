@@ -2,10 +2,17 @@
 Quickstart
 ==========
 
-After :doc:`installation`, you can use ``django-composite-foreignkey`` in your models.:
+After :doc:`installation`, you can use ``django-composite-foreignkey`` in your models.
+
+the django-composite-foreignkey give you two fields : CompositeForeignKey and CompositeOneToOneField. each one has
+the same behavior: it don't create a field on the database, but use a/some existings ones.
 
 Example simple composite ForeignKey models
 ------------------------------------------
+
+CompositeForeignKey
+^^^^^^^^^^^^^^^^^^^
+
 
 .. code:: python
 
@@ -32,7 +39,42 @@ Example simple composite ForeignKey models
             "company": "company_code"
         })
 
-these 2 models is linked by a CompositeForeignKey on Contact.customer. there is no `customer_id` field, but it use
+CompositeOneToOneField
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. code:: python
+
+    class Customer(models.Model):
+
+        company = models.IntegerField()
+        customer_id = models.IntegerField()
+        name = models.CharField(max_length=255)
+
+        class Meta(object):
+            unique_together = [
+                ("company", "customer_id"),
+            ]
+
+
+
+    class Extra(models.Model):
+        """
+        some wrongly analysed table that add extra column to existing one (not a django way of life)
+
+        """
+        company = models.IntegerField()
+        customer_id = models.IntegerField()
+        sales_revenue = models.FloatField()
+        customer = CompositeOneToOneField(
+            Customer,
+            on_delete=CASCADE,
+            related_name='extra',
+            to_fields={"company", "customer_id"})
+
+
+
+
+these 2 models is linked by either a CompositeForeignKey or a CompositeOneToOneField on Contact.customer. there is no `customer_id` field, but it use
 instead the shared fields company and customer_id. CompositeForeignKey support a advanced mapping which allow the fields
 from both models to no beeing named identicaly.
 
@@ -54,11 +96,32 @@ where a «normal» ForeignKey shoud be :
 | customer_id   | pk              |
 +---------------+-----------------+
 
+.. note::
+
+    you can provide the to_fields attribute as a set instead of a dict if ALL fields is a simple linke to the related
+    model and no special value is required.
+
+    .. code:: python
+
+        to_fields={"company", "customer_id"}
+
+    is equivalent to
+
+    .. code::
+
+        to_fields={"company": "company", "customer_id": "customer_id"}
+
+    +---------------+-----------------+
+    | Extra         | Customer        |
+    +===============+=================+
+    | company                         |
+    +---------------+-----------------+
+    | customer_id                     |
+    +---------------+-----------------+
+
 
 Example advanced composite ForeignKey models
 --------------------------------------------
-
-
 
 .. code:: python
 

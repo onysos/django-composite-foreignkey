@@ -26,7 +26,7 @@ except ImportError:
 from django.test.testcases import TestCase
 from django.db import models
 from compositefk.fields import CompositeForeignKey, RawFieldValue
-from testapp.models import Customer, Contact, Address
+from testapp.models import Customer, Contact, Address, Extra
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -195,3 +195,24 @@ class TestDeconstuct(TestCase):
 
                 migration_string = writer.as_string()
                 self.assertNotEqual(migration_string, "")
+
+class TestOneToOne(TestCase):
+    fixtures = ["all_fixtures.json"]
+    def test_set(self):
+        c = Customer.objects.all().get(pk=1)
+        with self.assertRaises(Extra.DoesNotExist):
+            self.assertIsNone(c.extra)
+        e = Extra(sales_revenue=17.35, customer=c)
+        e.save()
+        c.refresh_from_db()
+
+        self.assertEqual(c.extra, e)
+        self.assertEqual(e.customer, c)
+
+
+    def test_lookup(self):
+        c = Customer.objects.all().get(pk=1)
+        e = Extra(sales_revenue=17.35, customer=c)
+        e.save()
+
+        self.assertEqual(Extra.objects.get(customer__name=c.name), e)

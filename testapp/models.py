@@ -9,7 +9,7 @@ import logging
 import django.db.models as models
 from django.db.models.deletion import CASCADE
 
-from compositefk.fields import CompositeForeignKey, RawFieldValue, LocalFieldValue
+from compositefk.fields import CompositeForeignKey, RawFieldValue, LocalFieldValue, CompositeOneToOneField
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -29,7 +29,6 @@ class Address(models.Model):
 
 
 class Customer(models.Model):
-
     company = models.IntegerField()
     customer_id = models.IntegerField()
     name = models.CharField(max_length=255)
@@ -37,9 +36,9 @@ class Customer(models.Model):
         "tiers_id": "customer_id",
         "company": LocalFieldValue("company"),
         "type_tiers": RawFieldValue("C")
-    }, null_if_equal=[ # if either of the fields company or customer is -1, ther can't have address
+    }, null_if_equal=[  # if either of the fields company or customer is -1, ther can't have address
         ("company", -1),
-        ("customer_id", -1 )
+        ("customer_id", -1)
     ])
 
     class Meta(object):
@@ -49,7 +48,6 @@ class Customer(models.Model):
 
 
 class Supplier(models.Model):
-
     company = models.IntegerField()
     supplier_id = models.IntegerField()
     name = models.CharField(max_length=255)
@@ -74,3 +72,18 @@ class Contact(models.Model):
         "customer_id": "customer_code",
         "company": "company_code"
     })
+
+
+class Extra(models.Model):
+    """
+    some wrongly analysed table that add extra column to existing one (not a django way of life)
+
+    """
+    company = models.IntegerField()
+    customer_id = models.IntegerField()
+    sales_revenue = models.FloatField()
+    customer = CompositeOneToOneField(
+        Customer,
+        on_delete=CASCADE,
+        related_name='extra',
+        to_fields={"company", "customer_id"})
