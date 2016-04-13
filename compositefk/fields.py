@@ -163,8 +163,8 @@ class CompositeForeignKey(ForeignObject):
         if self.null_if_equal:
             cur_values_dict = dict(zip((f.name for f in fields), res))
             for field_name, exception_value in self.null_if_equal:
-                # check framework check if all fields exists
-                if cur_values_dict[field_name] == exception_value:
+                val = getattr(instance, field_name)
+                if val == exception_value:
                     # we have field_name that is equal to the bad value
                     return (None,) # currently, it is enouth since the django implementation check at first if there is a None in the result
         return res
