@@ -26,7 +26,7 @@ except ImportError:
 from django.test.testcases import TestCase
 from django.db import models
 from compositefk.fields import CompositeForeignKey, RawFieldValue
-from testapp.models import Customer, Contact, Address, Extra
+from testapp.models import Customer, Contact, Address, Extra, Function
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -214,5 +214,26 @@ class TestOneToOne(TestCase):
         c = Customer.objects.all().get(pk=1)
         e = Extra(sales_revenue=17.35, customer=c)
         e.save()
-
+        self.assertEqual(e.customer_id, c.id)
+        self.assertEqual(e.customer, c)
+        self.assertEqual(c.extra, e)
+        self.assertEqual(c.extra_id, e.id)
+        self.assertEqual(Customer.objects.get(extra__id=e.id), c)
+        self.assertEqual(Customer.objects.get(extra=e), c)
         self.assertEqual(Extra.objects.get(customer__name=c.name), e)
+
+
+class TestNormalForeignKey(TestCase):
+    fixtures = ["all_fixtures.json"]
+    def test_setattr_normal_fk(self):
+        f = Function(name="director")
+        f.save()
+        c = Contact.objects.get(pk=1)
+        c.function=f
+        self.assertEqual(c.function_id, f.id)
+
+    def test_setattr_composite_fk(self):
+        contact = Contact.objects.get(pk=1)  # moiraine
+        customer = Customer.objects.get(pk=2)
+        contact.customer = customer
+        self.assertEqual(contact.customer_id, customer.id)

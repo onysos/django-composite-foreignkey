@@ -4,14 +4,12 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import logging
+
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObject
 
-try:
-    from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
-except ImportError:
-    from django.db.models.fields.related import SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor
+from compositefk.related_descriptors import CompositeReverseOneToOneDescriptor, CompositeReverseSingleRelatedObjectDescriptor
 
 from django.utils.translation import ugettext_lazy as _
 
@@ -169,6 +167,24 @@ class CompositeForeignKey(ForeignObject):
                     return (None,) # currently, it is enouth since the django implementation check at first if there is a None in the result
         return res
 
+    def get_extra_attributes_fields(self):
+        """
+        un extra list of fields to link with the current field.
+        it permit, used with the CompositeReverseSingleRelatedObjectDescriptor, to add the
+        virtual attribute fieldname_id that does not exists at all, but may be used like a
+        generic foreignkey
+        :return: the list of tuple that shall be linked with remote model
+        """
+        return [('%s_id' % self.name, self.related_model._meta.pk.attname)]
+
+    def get_extra_related_attributes_fields(self):
+        return []
+
+    def contribute_to_class(self, cls, name, virtual_only=False):
+        super(ForeignObject, self).contribute_to_class(cls, name, virtual_only=virtual_only)
+        setattr(cls, self.name, CompositeReverseSingleRelatedObjectDescriptor(self))
+
+
 class CompositeOneToOneField(CompositeForeignKey):
     # Field flags
     many_to_many = False
@@ -176,20 +192,13 @@ class CompositeOneToOneField(CompositeForeignKey):
     one_to_many = False
     one_to_one = True
 
-    related_accessor_class = ReverseOneToOneDescriptor
+    related_accessor_class = CompositeReverseOneToOneDescriptor
 
     description = _("One-to-one relationship")
 
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
-        # kwargs['rel'] = OneToOneRel(
-        #     self, to,
-        #     related_name=kwargs.get('related_name', None),
-        #     related_query_name=kwargs.get('related_query_name', None),
-        #     limit_choices_to=kwargs.get('limit_choices_to', None),
-        #     parent_link=kwargs.get('parent_link', False),
-        #     on_delete=kwargs.get('on_delete', CASCADE),
-        # )
+
         super(CompositeOneToOneField, self).__init__(to, **kwargs)
         self.rel.multiple = False
 
@@ -198,6 +207,15 @@ class CompositeOneToOneField(CompositeForeignKey):
         if "unique" in kwargs:
             del kwargs['unique']
         return name, path, args, kwargs
+
+
+    def get_extra_related_attributes_fields(self):
+        """
+        return the list of attributes to set for the related instance
+        :return:
+        """
+
+        return [('%s_id' % self.related.field.name, self.model._meta.pk.attname)]
 
 
 class CompositePart(object):

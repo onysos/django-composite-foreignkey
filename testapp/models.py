@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
 
 
+class Function(models.Model):
+    name = models.CharField(max_length=32)
+
+
 class Address(models.Model):
     company = models.IntegerField()
     tiers_id = models.IntegerField()
@@ -67,6 +71,7 @@ class Contact(models.Model):
     company_code = models.IntegerField()
     customer_code = models.IntegerField()
     surname = models.CharField(max_length=255)
+    function = models.ForeignKey(Function, null=True)
     # virtual field
     customer = CompositeForeignKey(Customer, on_delete=CASCADE, related_name='contacts', to_fields={
         "customer_id": "customer_code",
