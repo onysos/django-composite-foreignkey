@@ -43,7 +43,26 @@ class CompositeForeignKey(ForeignObject):
         errors.extend(self._check_nullifequal_fields_exists())
         errors.extend(self._check_to_fields_local_valide())
         errors.extend(self._check_to_fields_remote_valide())
+        errors.extend(self._check_recursion_field_dependecy())
         return errors
+
+    def _check_recursion_field_dependecy(self):
+        res = []
+        for local_field in self._raw_fields.values():
+            try:
+                f = self.model._meta.get_field(local_field.value)
+                if isinstance(f, CompositeForeignKey):
+                    res.append(
+                        checks.Error(
+                            "the field %s depend on the field %s which is another CompositeForeignKey" % (self.name, local_field),
+                            hint=None,
+                            obj=self,
+                            id='compositefk.E005',
+                        )
+                    )
+            except FieldDoesNotExist:
+                pass # _check_to_fields_local_valide already raise errors for this
+        return res
 
     def _check_to_fields_local_valide(self):
         res = []

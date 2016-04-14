@@ -26,3 +26,10 @@ class TempModel(models.Model):
         ("don'texists", 37),
     ])
 
+class BadIdeaModel(models.Model):
+    n = models.CharField(max_length=2)
+    address = CompositeForeignKey(Address, on_delete=CASCADE, null=False, to_fields={
+        "tiers_id": "n",
+        "company": "address",# recursive dependency
+    })
+
