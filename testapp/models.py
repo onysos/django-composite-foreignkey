@@ -87,3 +87,10 @@ class Extra(models.Model):
         on_delete=CASCADE,
         related_name='extra',
         to_fields={"company", "customer_id"})
+
+
+class AModel(models.Model):
+    n = models.CharField(max_length=32)
+
+class BModel(models.Model):
+    a = models.ForeignKey(AModel, null=True, on_delete=CASCADE)

@@ -6,7 +6,10 @@ from __future__ import unicode_literals, print_function, absolute_import
 import logging
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
+from django.db.models.expressions import Col
 from django.db.models.fields.related import ForeignObject
+from django.db.models.fields.related_lookups import MultiColSource, get_normalized_value
+from django.db.models.lookups import Exact
 
 try:
     from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
@@ -18,6 +21,38 @@ from django.utils.translation import ugettext_lazy as _
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
 
+class EnhencedLookupMixin(object):
+    """
+    a mixin added to a Lookup that will add the RealValuefield into the sql part
+    """
+    
+    def as_sql(self,compiler, connection):
+        if isinstance(self.lhs, MultiColSource) and self.rhs_is_direct_value() and False:
+            # For multicolumn lookups we need to build a multicolumn where clause.
+            # This clause is either a SubqueryConstraint (for values that need to be compiled to
+            # SQL) or a OR-combined list of (col1 = val1 AND col2 = val2 AND ...) clauses.
+            from django.db.models.sql.where import WhereNode, SubqueryConstraint, AND, OR
+
+            root_constraint = WhereNode(connector=OR)
+
+            values = [get_normalized_value(value, self.lhs) for value in self.rhs]
+            field = self.lhs.field # type: CompositeForeignKey
+            for value in values:
+                value_constraint = WhereNode()
+
+                for source, val in zip(self.lhs.sources, value):
+                    target = field._raw_fields[source.name]
+                    if target.is_local_field:
+                        target_field = field.model._meta.get_field(target.value)
+                        lookup_class = target_field.get_lookup('exact')
+                        lookup = lookup_class(target_field.get_col(self.lhs.alias, source), val)
+
+                        value_constraint.add(lookup, AND)
+                root_constraint.add(value_constraint, OR)
+            return root_constraint.as_sql(compiler, connection)
+        else:
+            return super(EnhencedLookupMixin, self).as_sql(compiler, connection)
+        
 
 class CompositeForeignKey(ForeignObject):
     requires_unique_target = False
@@ -29,6 +64,9 @@ class CompositeForeignKey(ForeignObject):
         self.null_if_equal = kwargs.pop("null_if_equal", [])
         # a list of tuple : (fieldnaem, value) . if fielname = value, then the field react as if fieldnaem_id = None
         self._raw_fields = self.compute_to_fields(to_fields)
+        # hiro nakamura should have said «very bad guy. you are vilain»
+        if "on_delete" in kwargs:
+            kwargs["on_delete"] = self.override_on_delete(kwargs["on_delete"])
 
         kwargs["to_fields"], kwargs["from_fields"] = zip(*(
             (k, v.value)
@@ -36,6 +74,19 @@ class CompositeForeignKey(ForeignObject):
             if v.is_local_field
         ))
         super(CompositeForeignKey, self).__init__(to, **kwargs)
+
+    def override_on_delete(self, original):
+        
+        def wrapper(collector, field, sub_objs, using):
+            res = original(collector, field, sub_objs, using)
+            # we make something nasty : we update the collector to
+            # skip the local field which does not have a dbcolumn
+            try:
+                del collector.field_updates[self.model][(self, None)]
+            except KeyError:
+                pass
+            return res
+        return wrapper
 
     def check(self, **kwargs):
         errors = super(CompositeForeignKey, self).check(**kwargs)
@@ -138,6 +189,10 @@ class CompositeForeignKey(ForeignObject):
             k: v.value for k, v in self._raw_fields.items()
             if isinstance(v, RawFieldValue)
             }
+    
+    def get_lookup(self, lookup_name):
+        res = super(CompositeForeignKey, self).get_lookup(lookup_name)
+        return type(str("Enhenced"+ res.__name__), (EnhencedLookupMixin, res), {})
 
     @property
     def foreign_related_fields(self):
@@ -188,6 +243,21 @@ class CompositeForeignKey(ForeignObject):
                     return (None,) # currently, it is enouth since the django implementation check at first if there is a None in the result
         return res
 
+
+    def get_lookup_constraint(self, constraint_class, alias, targets, sources, lookups,
+                              raw_value):
+        # we override this to make sure that a nice target is inserted wherever a RawValueField was
+        # used in to_fields
+        if len(targets) < len(sources):
+            # more sources than targets : we have
+            # the query that try to use a field that is staticaly
+            # fixed to a value via RawFieldValue.
+            # we rebuild the list of fields without the useless
+            # field that is fixed
+            sources = tuple(src for src in sources if self._raw_fields[src.name].is_local_field)
+        return super(CompositeForeignKey, self).get_lookup_constraint(constraint_class, alias, targets, sources, lookups,
+                              raw_value)
+
 class CompositeOneToOneField(CompositeForeignKey):
     # Field flags
     many_to_many = False
@@ -201,14 +271,6 @@ class CompositeOneToOneField(CompositeForeignKey):
 
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
-        # kwargs['rel'] = OneToOneRel(
-        #     self, to,
-        #     related_name=kwargs.get('related_name', None),
-        #     related_query_name=kwargs.get('related_query_name', None),
-        #     limit_choices_to=kwargs.get('limit_choices_to', None),
-        #     parent_link=kwargs.get('parent_link', False),
-        #     on_delete=kwargs.get('on_delete', CASCADE),
-        # )
         super(CompositeOneToOneField, self).__init__(to, **kwargs)
         self.rel.multiple = False
 
@@ -237,6 +299,15 @@ class CompositePart(object):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.value)
 
+    def get_field(self, main_field):
+        pass
+
+class FakeForcedValueField(object):
+    """
+    a fake field that just return lookup to make
+    query on a raw value instead of a real colomn.
+    """
+
 
 class RawFieldValue(CompositePart):
     """
@@ -244,9 +315,19 @@ class RawFieldValue(CompositePart):
     """
     is_local_field = False
 
+    def get_field(self, main_field):
+        """
+        create a fake field for the lookup capability
+        :param main_field:
+        :return:
+        """
+        return FakeForcedValueField(self.value)
 
 class LocalFieldValue(CompositePart):
     """
     implicitly used, represent the value of a local field
     """
     is_local_field = True
+
+    def get_field(self, main_field):
+        main_field.opts.get_field(self.value)

@@ -26,7 +26,7 @@ except ImportError:
 from django.test.testcases import TestCase
 from django.db import models
 from compositefk.fields import CompositeForeignKey, RawFieldValue
-from testapp.models import Customer, Contact, Address, Extra
+from testapp.models import Customer, Contact, Address, Extra, AModel, BModel
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -110,6 +110,11 @@ class TestLookupQuery(TestCase):
         contact = Contact.objects.get(pk=1)  # moiraine
         self.assertEqual(1, Customer.objects.filter(contacts__surname=contact.surname).count())
         self.assertEqual(1, Customer.objects.filter(contacts=contact).count())
+
+    def test_deep_lookup(self):
+        c = Customer.objects.get(pk=1)
+        a = c.address
+        self.assertEqual([c], list(Customer.objects.filter(address__in=[a])))
 
 
 class TestExtraFilterRawValue(TestCase):
@@ -218,3 +223,35 @@ class TestOneToOne(TestCase):
         e.save()
 
         self.assertEqual(Extra.objects.get(customer__name=c.name), e)
+
+
+class TestDeletion(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    def test_one_delete(self):
+        c = Customer.objects.get(pk=1)
+        c.delete()
+
+    def test_bulk_delete(self):
+        Customer.objects.all().delete()
+
+    def test_normal_delete(self):
+        a = AModel.objects.create(n="plop")
+        c = BModel.objects.create(a=a)
+
+        self.assertTrue(AModel.objects.filter(pk=a.pk).exists())
+        self.assertTrue(BModel.objects.filter(pk=c.pk).exists())
+        a.delete()
+        self.assertFalse(AModel.objects.filter(pk=a.pk).exists())
+        self.assertFalse(BModel.objects.filter(pk=c.pk).exists())
+
+
+    def test_ondelete_cascade(self):
+        c = Customer.objects.get(pk=1)
+        a = c.address
+        self.assertTrue(Address.objects.filter(pk=a.pk).exists())
+        self.assertTrue(Customer.objects.filter(pk=c.pk).exists())
+        a.delete()
+        self.assertFalse(Address.objects.filter(pk=a.pk).exists())
+        self.assertFalse(Customer.objects.filter(pk=c.pk).exists())
+
