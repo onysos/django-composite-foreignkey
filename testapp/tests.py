@@ -111,10 +111,15 @@ class TestLookupQuery(TestCase):
         self.assertEqual(1, Customer.objects.filter(contacts__surname=contact.surname).count())
         self.assertEqual(1, Customer.objects.filter(contacts=contact).count())
 
-    def test_deep_lookup(self):
+    def test_deep_forward(self):
         c = Customer.objects.get(pk=1)
         a = c.address
         self.assertEqual([c], list(Customer.objects.filter(address__in=[a])))
+
+    def test_deep_backward(self):
+        c = Customer.objects.get(pk=1)
+        a = c.address
+        self.assertEqual([a], list(Address.objects.filter(customer__in=[c])))
 
 
 class TestExtraFilterRawValue(TestCase):
