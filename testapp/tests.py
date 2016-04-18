@@ -135,8 +135,13 @@ class TestLookupQuery(TestCase):
         p = PhoneNumber.objects.get(pk=1)
         a = Address.objects.get(pk=1)
         q = PhoneNumber.objects.filter(contact__customer__address=a)
-        print(q.query)
-        self.assertEqual([p], list(q))
+
+    def test_very_deep_optimized_backward(self):
+        # this query is optimized by django
+        p = PhoneNumber.objects.get(pk=1)
+        a = Address.objects.get(pk=1)
+        q = Address.objects.filter(customer__contacts__phonenumbers=p)
+        self.assertEqual([a], list(q))
 
 
 class TestExtraFilterRawValue(TestCase):

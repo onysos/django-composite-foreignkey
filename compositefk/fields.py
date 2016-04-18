@@ -270,14 +270,6 @@ class RawFieldValue(CompositePart):
     """
     is_local_field = False
 
-    def create_field_name(self, main_field, for_remote):
-        """
-
-        :param CompositeForeignKey main_field: the main field
-        :return:
-        """
-        return "__rawvalue__%s__%s" % (main_field.attname, for_remote.name)
-
     def get_lookup(self, main_field, for_remote, alias):
         """
         create a fake field for the lookup capability
