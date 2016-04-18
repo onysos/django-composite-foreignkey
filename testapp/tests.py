@@ -26,7 +26,7 @@ except ImportError:
 from django.test.testcases import TestCase
 from django.db import models
 from compositefk.fields import CompositeForeignKey, RawFieldValue
-from testapp.models import Customer, Contact, Address, Extra, AModel, BModel
+from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -119,7 +119,24 @@ class TestLookupQuery(TestCase):
     def test_deep_backward(self):
         c = Customer.objects.get(pk=1)
         a = c.address
-        self.assertEqual([a], list(Address.objects.filter(customer__in=[c])))
+        l = list(Address.objects.filter(customer__in=[c]))
+        self.assertEqual([a], l)
+
+    def test_very_deep_mixed_forward(self):
+        p = PhoneNumber.objects.get(pk=1)
+        c = Contact.objects.get(pk=2)
+        cu = Customer.objects.get(pk=1)
+        a = Address.objects.get(pk=1)
+        self.assertEqual([p], list(PhoneNumber.objects.filter(contact=c)))
+        self.assertEqual([p], list(PhoneNumber.objects.filter(contact__customer=cu)))
+
+    def test_very_deep_optimized_forward(self):
+        # this query is optimized by django
+        p = PhoneNumber.objects.get(pk=1)
+        a = Address.objects.get(pk=1)
+        q = PhoneNumber.objects.filter(contact__customer__address=a)
+        print(q.query)
+        self.assertEqual([p], list(q))
 
 
 class TestExtraFilterRawValue(TestCase):

@@ -105,5 +105,14 @@
       "city": "neverworld",
       "postcode": "00111"
     }
+  },
+  {
+    "model": "testapp.PhoneNumber",
+    "pk": 1,
+    "fields": {
+      "num": "1234512345",
+      "type_number": 1,
+      "contact_id": 2
+    }
   }
 ]

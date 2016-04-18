@@ -5,6 +5,7 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import logging
+from collections import OrderedDict
 
 import django.db.models as models
 from django.db.models.deletion import CASCADE
@@ -32,11 +33,14 @@ class Customer(models.Model):
     company = models.IntegerField()
     customer_id = models.IntegerField()
     name = models.CharField(max_length=255)
-    address = CompositeForeignKey(Address, on_delete=CASCADE, null=True, to_fields={
-        "tiers_id": "customer_id",
-        "company": LocalFieldValue("company"),
-        "type_tiers": RawFieldValue("C")
-    }, null_if_equal=[  # if either of the fields company or customer is -1, ther can't have address
+    # for problem in trim_join, we must try to give the fields in a consistent order with others models...
+    # see #26515 at  https://code.djangoproject.com/ticket/26515
+    # so we always give company first and tiers_id after
+    address = CompositeForeignKey(Address, on_delete=CASCADE, null=True, to_fields=OrderedDict([
+        ("company", LocalFieldValue("company")),
+        ("tiers_id", "customer_id"),
+        ("type_tiers", RawFieldValue("C"))
+    ]), null_if_equal=[  # if either of the fields company or customer is -1, ther can't have address
         ("company", -1),
         ("customer_id", -1)
     ])
@@ -51,11 +55,11 @@ class Supplier(models.Model):
     company = models.IntegerField()
     supplier_id = models.IntegerField()
     name = models.CharField(max_length=255)
-    address = CompositeForeignKey(Address, on_delete=CASCADE, to_fields={
-        "tiers_id": "supplier_id",
-        "company": LocalFieldValue("company"),
-        "type_tiers": RawFieldValue("S")
-    })
+    address = CompositeForeignKey(Address, on_delete=CASCADE, to_fields=OrderedDict([
+        ("company", LocalFieldValue("company")),
+        ("tiers_id", "supplier_id"),
+        ("type_tiers", RawFieldValue("S"))
+    ]))
 
     class Meta(object):
         unique_together = [
@@ -68,10 +72,17 @@ class Contact(models.Model):
     customer_code = models.IntegerField()
     surname = models.CharField(max_length=255)
     # virtual field
-    customer = CompositeForeignKey(Customer, on_delete=CASCADE, related_name='contacts', to_fields={
-        "customer_id": "customer_code",
-        "company": "company_code"
-    })
+    customer = CompositeForeignKey(Customer, on_delete=CASCADE, related_name='contacts', to_fields=OrderedDict([
+        ("company", "company_code"),
+        ("customer_id", "customer_code"),
+    ]))
+
+
+
+class PhoneNumber(models.Model):
+    num = models.CharField(max_length=32)
+    type_number = models.IntegerField()
+    contact = models.ForeignKey(Contact, on_delete=CASCADE, related_name='phonenumbers')
 
 
 class Extra(models.Model):
@@ -86,11 +97,12 @@ class Extra(models.Model):
         Customer,
         on_delete=CASCADE,
         related_name='extra',
-        to_fields={"company", "customer_id"})
+        to_fields=["company", "customer_id"])
 
 
 class AModel(models.Model):
     n = models.CharField(max_length=32)
+
 
 class BModel(models.Model):
     a = models.ForeignKey(AModel, null=True, on_delete=CASCADE)

@@ -4,6 +4,7 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import logging
+from collections import OrderedDict
 from functools import wraps
 
 from django.core import checks
@@ -11,6 +12,7 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models.expressions import Value
 from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignObject
+from django.db.models.sql.where import WhereNode, AND
 from django.utils import six
 
 try:
@@ -160,21 +162,16 @@ class CompositeForeignKey(ForeignObject):
             if isinstance(v, RawFieldValue)
             }
 
-
-    def resolve_related_fields(self):
-        if len(self.from_fields) < 1 or len(self.from_fields) != len(self.to_fields):
-            raise ValueError('Foreign Object from and to fields must be the same non-zero length')
-        if isinstance(self.remote_field.model, six.string_types):
-            raise ValueError('Related model %r cannot be resolved' % self.remote_field.model)
-        related_fields = []
+    def get_extra_restriction(self, where_class, alias, related_alias):
+        constraint =  WhereNode(connector=AND)
         for remote, local in self._raw_fields.items():
-            to_field_name = remote
-            to_field = (self.remote_field.model._meta.pk if to_field_name is None
-                        else self.remote_field.model._meta.get_field(to_field_name))
-            from_field = local.get_field(self, to_field)
-            related_fields.append((from_field, to_field))
-        return related_fields
-
+            lookup =  local.get_lookup(self, self.related_model._meta.get_field(remote), alias)
+            if lookup:
+                constraint.add(lookup, AND)
+        if constraint.children:
+            return constraint
+        else:
+            return None
 
     def compute_to_fields(self, to_fields):
         """
@@ -183,11 +180,13 @@ class CompositeForeignKey(ForeignObject):
         :return: the well formated to_field containing only subclasses of CompositePart
         :rtype: dict[str, CompositePart]
         """
+        # for problem in trim_join, we must try to give the fields in a consistent order with others models...
+        # see #26515 at  https://code.djangoproject.com/ticket/26515
 
-        return {
-            k: (v if isinstance(v, CompositePart) else LocalFieldValue(v))
+        return OrderedDict(
+            (k, (v if isinstance(v, CompositePart) else LocalFieldValue(v)))
             for k, v in (to_fields.items() if isinstance(to_fields, dict) else zip(to_fields, to_fields))
-            }
+            )
 
     def db_type(self, connection):
         # A CompositeForeignKey don't have a column in the database
@@ -256,26 +255,13 @@ class CompositePart(object):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.value)
 
-    def get_field(self, main_field, for_remote):
-        pass
-
-class FakeForcedValueField(Field):
-    """
-    a fake field that just return lookup to make
-    query on a raw value instead of a real colomn.
-    """
-    column = None
-    def __init__(self, name, value, output_field):
-        self.value = value
-        self.output_field = output_field
-        super(FakeForcedValueField, self).__init__(name=name)
-        self.attname = name
-
-    def get_col(self, *args):
-        v = Value(self.value, output_field=self.output_field)
-        v.for_save = False
-        return v
-
+    def get_lookup(self, main_field, for_remote, alias):
+        """
+        create a fake field for the lookup capability
+        :param CompositeForeignKey main_field: the local fk
+        :param Field for_remote: the remote field to match
+        :return:
+        """
 
 
 class RawFieldValue(CompositePart):
@@ -292,23 +278,19 @@ class RawFieldValue(CompositePart):
         """
         return "__rawvalue__%s__%s" % (main_field.attname, for_remote.name)
 
-    def get_field(self, main_field, for_remote):
+    def get_lookup(self, main_field, for_remote, alias):
         """
         create a fake field for the lookup capability
         :param CompositeForeignKey main_field: the local fk
         :param Field for_remote: the remote field to match
         :return:
         """
+        lookup_class = for_remote.get_lookup("exact")
+        return lookup_class(for_remote.get_col(alias), self.value)
 
-        name = self.create_field_name(main_field, for_remote)
-        setattr(main_field.model, name, self.value)
-        return FakeForcedValueField(name=name, value=self.value, output_field=for_remote)
 
 class LocalFieldValue(CompositePart):
     """
     implicitly used, represent the value of a local field
     """
     is_local_field = True
-
-    def get_field(self, main_field, for_remote):
-        return main_field.opts.get_field(self.value)
