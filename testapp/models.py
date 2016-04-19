@@ -29,10 +29,18 @@ class Address(models.Model):
         ]
 
 
+
+class Representant(models.Model):
+    company = models.IntegerField()
+    cod_rep = models.CharField(max_length=2)
+
+
 class Customer(models.Model):
     company = models.IntegerField()
     customer_id = models.IntegerField()
     name = models.CharField(max_length=255)
+    cod_rep = models.CharField(max_length=2, null=True)
+
     # for problem in trim_join, we must try to give the fields in a consistent order with others models...
     # see #26515 at  https://code.djangoproject.com/ticket/26515
     # so we always give company first and tiers_id after
@@ -44,6 +52,11 @@ class Customer(models.Model):
         ("company", -1),
         ("customer_id", -1)
     ])
+
+    representant = CompositeForeignKey(Representant, on_delete=CASCADE, null=True, to_fields=[
+        "company",
+        "cod_rep",
+    ], nullable_fields=["cod_rep"])
 
     class Meta(object):
         unique_together = [
@@ -106,3 +119,5 @@ class AModel(models.Model):
 
 class BModel(models.Model):
     a = models.ForeignKey(AModel, null=True, on_delete=CASCADE)
+
+

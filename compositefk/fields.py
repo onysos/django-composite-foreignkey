@@ -15,6 +15,8 @@ from django.db.models.fields.related import ForeignObject
 from django.db.models.sql.where import WhereNode, AND
 from django.utils import six
 
+from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
+
 try:
     from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 except ImportError:
@@ -33,6 +35,7 @@ class CompositeForeignKey(ForeignObject):
         """
         to_fields = kwargs["to_fields"]
         self.null_if_equal = kwargs.pop("null_if_equal", [])
+        self.nullable_fields = kwargs.pop("nullable_fields", [])
         # a list of tuple : (fieldnaem, value) . if fielname = value, then the field react as if fieldnaem_id = None
         self._raw_fields = self.compute_to_fields(to_fields)
         # hiro nakamura should have said «very bad guy. you are vilain»
@@ -195,6 +198,10 @@ class CompositeForeignKey(ForeignObject):
 
     def db_parameters(self, connection):
         return {"type": None, "check": None}
+
+    def contribute_to_class(self, cls, name, virtual_only=False):
+        super(ForeignObject, self).contribute_to_class(cls, name, virtual_only=virtual_only)
+        setattr(cls, self.name, CompositeForwardManyToOneDescriptor(self))
 
     def get_instance_value_for_fields(self, instance, fields):
         # we override this method to provide the feathur of converting

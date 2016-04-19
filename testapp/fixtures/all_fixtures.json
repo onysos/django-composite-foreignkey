@@ -5,7 +5,8 @@
     "fields": {
       "company": 1,
       "customer_id": 10,
-      "name": "plop SARL"
+      "name": "plop SARL",
+      "cod_rep": "DB"
     }
   },
   {
@@ -14,7 +15,8 @@
     "fields": {
       "company": 1,
       "customer_id": 20,
-      "name": "moiraine & cie"
+      "name": "moiraine & cie",
+      "cod_rep": null
     }
   },
   {
@@ -23,7 +25,8 @@
     "fields": {
       "company": 2,
       "customer_id": 10,
-      "name": "moiraine & cie"
+      "name": "moiraine & cie",
+      "cod_rep": "DB"
     }
   },
   {
@@ -32,7 +35,8 @@
     "fields": {
       "company": 2,
       "customer_id": -1,
-      "name": "no addr1"
+      "name": "no addr1",
+      "cod_rep": null
     }
   },
   {
@@ -41,7 +45,8 @@
     "fields": {
       "company": -1,
       "customer_id": 10,
-      "name": "no addr2"
+      "name": "no addr2",
+      "cod_rep": "DB"
     }
   },
   {
@@ -113,6 +118,22 @@
       "num": "1234512345",
       "type_number": 1,
       "contact_id": 2
+    }
+  },
+  {
+    "model": "testapp.Representant",
+    "pk": 1,
+    "fields": {
+      "company": 1,
+      "cod_rep": "DB"
+    }
+  },
+  {
+    "model": "testapp.Representant",
+    "pk": 2,
+    "fields": {
+      "company": 2,
+      "cod_rep": "DB"
     }
   }
 ]

@@ -37,7 +37,7 @@ CompositeForeignKey
         customer = CompositeForeignKey(Customer, on_delete=CASCADE, related_name='contacts', to_fields={
             "customer_id": "customer_code",
             "company": "company_code"
-        })
+        }, nullable_fields=["customer_code"])
 
 CompositeOneToOneField
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -233,6 +233,16 @@ it is the same behavior as if a normal foreignkey address had address_id = None.
 
     these cases should not be possible on database that use ForeignKey constraint. but with some legacy database that won't,
     this feathure is mandatory to bypass the headarch comming with broken logic on special values.
+
+Set Specific attribute to None
+------------------------------
+
+Sometimes, all fields used in the composite relation is not only used for this one. in our Contact class,
+the company can be used in other fields. you can use the arguments `nullable_fields` to give the list
+of fields to set to null in case you wante to remove the link. since if one of the composite field is
+resolved to None, the field will return None.
+
+so Contact.customer = None is equal to Contact.customer_code = None if nullable_fields=["customer_code"]
 
 
 Test application

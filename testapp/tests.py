@@ -32,7 +32,7 @@ except ImportError:
 
 from django.test.testcases import TestCase
 from compositefk.fields import CompositeForeignKey
-from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber
+from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber, Representant
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -296,18 +296,24 @@ class TestmanagementCommand(TestCase):
         call_command("graph_datas", "testapp", stdout=out)
 
         result = out.getvalue()
+        # print(result)
         self.assertEqual("""digraph items_in_db {
 { rank=same; address_1;address_2;address_3; }
+{ rank=same; representant_1;representant_2; }
 { rank=same; customer_1;customer_2;customer_3;customer_4;customer_5; }
 { rank=same; contact_1;contact_2; }
 { rank=same; phonenumber_1; }
 address_1;
 address_2;
 address_3;
+representant_1;
+representant_2;
 customer_1;
 customer_1  -> address_1;
+customer_1  -> representant_1;
 customer_2;
 customer_3;
+customer_3  -> representant_2;
 customer_4;
 customer_5;
 contact_1;
@@ -321,3 +327,28 @@ phonenumber_1  -> contact_2;
 
     def test_app_not_exists(self):
         self.assertRaises(CommandError, call_command, "graph_datas", "doesnotexistsapp")
+
+class TestToNone(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    def test_value_to_something(self):
+        r = Representant.objects.get(pk=1)
+        c = Customer.objects.get(pk=2)
+        self.assertIsNone(c.representant)
+        self.assertIsNone(c.cod_rep)
+        c.representant = r
+        c.save()
+        self.assertEqual(c.representant, r)
+        self.assertEqual(c.cod_rep, "DB")
+
+    def test_value_to_none(self):
+        r = Representant.objects.get(pk=1)
+        c = Customer.objects.get(pk=1)
+
+        self.assertEqual(c.representant, r)
+        self.assertEqual(c.cod_rep, "DB")
+        c.representant = None
+        c.save()
+        self.assertIsNotNone(c.company)
+        self.assertIsNone(c.representant)
+        self.assertIsNone(c.cod_rep)
