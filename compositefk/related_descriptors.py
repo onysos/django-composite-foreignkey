@@ -5,7 +5,12 @@
 from __future__ import unicode_literals, print_function, absolute_import
 import logging
 
-from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+
+
+try:
+    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+except ImportError:
+    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -31,7 +36,11 @@ class CompositeForwardManyToOneDescriptor(ForwardManyToOneDescriptor):
             # cache. This cache also might not exist if the related object
             # hasn't been accessed yet.
             if related is not None:
-                setattr(related, self.field.remote_field.get_cache_name(), None)
+                try:
+                    related_field = self.field.remote_field
+                except AttributeError:
+                    related_field = self.field.rel
+                setattr(related, related_field.get_cache_name(), None)
 
             # ##### only original part
 
