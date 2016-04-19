@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import OrderedDict
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -39,10 +40,10 @@ class Command(BaseCommand):
                         for field in model._meta.get_fields():
 
                             if field.many_to_many:
-                                childs.extend(list(getattr(obj, field.attname).all()))
+                                childs.extend(list(getattr(obj, field.name).all()))
                             elif field.many_to_one:
                                 try:
-                                    childs.append(getattr(obj, field.attname))
+                                    childs.append(getattr(obj, field.name))
                                 except field.related_model.DoesNotExist:
                                     pass
                         childs = [child for child in childs if child is not None]
@@ -53,7 +54,7 @@ class Command(BaseCommand):
 
     def get_digraph(self, objects):
         edges = []
-        nodes={}
+        nodes=OrderedDict()
         for obj, childs in objects:
             nodes.setdefault(obj.__class__, []).append(obj)
             edges.append(get_name(obj))

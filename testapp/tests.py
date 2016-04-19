@@ -3,10 +3,14 @@
 
 
 from __future__ import unicode_literals, print_function, absolute_import
+
+from StringIO import StringIO
 import logging
 
 from django.apps import apps
 from django.conf import settings
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.loader import MigrationLoader
 from django.db.models.deletion import CASCADE
@@ -24,8 +28,7 @@ except ImportError:
     from django.db.models.fields.related import ForeignObjectRel
 
 from django.test.testcases import TestCase
-from django.db import models
-from compositefk.fields import CompositeForeignKey, RawFieldValue
+from compositefk.fields import CompositeForeignKey
 from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber
 
 logger = logging.getLogger(__name__)
@@ -282,3 +285,36 @@ class TestDeletion(TestCase):
         self.assertFalse(Address.objects.filter(pk=a.pk).exists())
         self.assertFalse(Customer.objects.filter(pk=c.pk).exists())
 
+class TestmanagementCommand(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    def test_graph_data(self):
+        out = StringIO()
+        call_command("graph_datas", "testapp", stdout=out)
+
+        result = out.getvalue()
+        self.assertEqual("""digraph items_in_db {
+{ rank=same; address_1;address_2;address_3; }
+{ rank=same; customer_1;customer_2;customer_3;customer_4;customer_5; }
+{ rank=same; contact_1;contact_2; }
+{ rank=same; phonenumber_1; }
+address_1;
+address_2;
+address_3;
+customer_1;
+customer_1  -> address_1;
+customer_2;
+customer_3;
+customer_4;
+customer_5;
+contact_1;
+contact_1  -> customer_3;
+contact_2;
+contact_2  -> customer_1;
+phonenumber_1;
+phonenumber_1  -> contact_2;
+}
+""", result)
+
+    def test_app_not_exists(self):
+        self.assertRaises(CommandError, call_command, "graph_datas", "doesnotexistsapp")
