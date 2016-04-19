@@ -4,7 +4,10 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import logging
 
 from django.apps import apps
