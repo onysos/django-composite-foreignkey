@@ -208,7 +208,7 @@ class TestDeconstuct(TestCase):
             )
             self.assertListEqual([issue.id for issue in all_issues], [
                 'compositefk.E001', 'compositefk.E002', 'compositefk.E003',
-                'compositefk.E003', 'compositefk.E004', 'compositefk.E005' ])
+                'compositefk.E003', 'compositefk.E004', 'compositefk.E006', 'compositefk.E005' ])
 
     def test_total_deconstruct(self):
         loader = MigrationLoader(None, load=True, ignore_no_migrations=True)

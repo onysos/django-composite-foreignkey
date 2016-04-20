@@ -27,8 +27,10 @@ from django.utils.translation import ugettext_lazy as _
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
 
+
 class CompositeForeignKey(ForeignObject):
     requires_unique_target = False
+
     def __init__(self, to, **kwargs):
         """
         create the ForeignObject, but use the to_fields as a dict which will later used as form_fields and to_fields
@@ -65,6 +67,7 @@ class CompositeForeignKey(ForeignObject):
             except KeyError:
                 pass
             return res
+
         return wrapper
 
     def check(self, **kwargs):
@@ -74,7 +77,37 @@ class CompositeForeignKey(ForeignObject):
         errors.extend(self._check_to_fields_local_valide())
         errors.extend(self._check_to_fields_remote_valide())
         errors.extend(self._check_recursion_field_dependecy())
+        errors.extend(self._check_bad_order_fields())
         return errors
+
+    def _check_bad_order_fields(self):
+        res = []
+        try:
+            dependents = list(self.local_related_fields)
+        except FieldDoesNotExist:
+            return [] # the errors shall be raised befor by _check_recursion_field_dependecy
+
+        for field in self.model._meta.get_fields():
+            try:
+                dependents.remove(field)
+            except ValueError:
+                pass
+            if field == self:
+                if dependents:
+                    # we met the current fields, but all dependent fields is not
+                    # passed befor : we will have a problem in the init of some objects
+                    # where the rest of dependents fields will override the
+                    # values set by the current one (see Model.__init__)
+                    res.append(
+                        checks.Error(
+                            "the field %s depend on the fields %s which is defined after. define them befor %s" %
+                            (self.name, ",".join(f.name for f in dependents), self.name),
+                            hint=None,
+                            obj=self,
+                            id='compositefk.E006',
+                        ))
+                break
+        return res
 
     def _check_recursion_field_dependecy(self):
         res = []
@@ -91,7 +124,7 @@ class CompositeForeignKey(ForeignObject):
                         )
                     )
             except FieldDoesNotExist:
-                pass # _check_to_fields_local_valide already raise errors for this
+                pass  # _check_to_fields_local_valide already raise errors for this
         return res
 
     def _check_to_fields_local_valide(self):
@@ -126,7 +159,6 @@ class CompositeForeignKey(ForeignObject):
                     )
                 )
         return res
-
 
     def _check_null_with_nullifequal(self):
         if self.null_if_equal and not self.null:
@@ -170,9 +202,9 @@ class CompositeForeignKey(ForeignObject):
             }
 
     def get_extra_restriction(self, where_class, alias, related_alias):
-        constraint =  WhereNode(connector=AND)
+        constraint = WhereNode(connector=AND)
         for remote, local in self._raw_fields.items():
-            lookup =  local.get_lookup(self, self.related_model._meta.get_field(remote), alias)
+            lookup = local.get_lookup(self, self.related_model._meta.get_field(remote), alias)
             if lookup:
                 constraint.add(lookup, AND)
         if constraint.children:
@@ -193,7 +225,7 @@ class CompositeForeignKey(ForeignObject):
         return OrderedDict(
             (k, (v if isinstance(v, CompositePart) else LocalFieldValue(v)))
             for k, v in (to_fields.items() if isinstance(to_fields, dict) else zip(to_fields, to_fields))
-            )
+        )
 
     def db_type(self, connection):
         # A CompositeForeignKey don't have a column in the database
@@ -221,7 +253,7 @@ class CompositeForeignKey(ForeignObject):
                 val = getattr(instance, field_name)
                 if val == exception_value:
                     # we have field_name that is equal to the bad value
-                    return (None,) # currently, it is enouth since the django implementation check at first if there is a None in the result
+                    return (None,)  # currently, it is enouth since the django implementation check at first if there is a None in the result
         return res
 
 
