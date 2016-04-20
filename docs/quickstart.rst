@@ -244,6 +244,8 @@ resolved to None, the field will return None.
 
 so Contact.customer = None is equal to Contact.customer_code = None if nullable_fields=["customer_code"]
 
+nullable_fields can be a dict, which provide the value to put instead of None of each updated fields, which
+can synergize well with `null_if_equal`
 
 Test application
 ----------------

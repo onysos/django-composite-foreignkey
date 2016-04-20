@@ -44,8 +44,8 @@ class CompositeForwardManyToOneDescriptor(ForwardManyToOneDescriptor):
 
             # ##### only original part
 
-            for lh_field_name in self.field.nullable_fields:
-                setattr(instance, lh_field_name, None)
+            for lh_field_name, none_value in self.field.nullable_fields.items():
+                setattr(instance, lh_field_name, none_value)
 
 
             # Set the related instance cache used by __get__ to avoid a SQL query

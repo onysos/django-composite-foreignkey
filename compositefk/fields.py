@@ -35,7 +35,11 @@ class CompositeForeignKey(ForeignObject):
         """
         to_fields = kwargs["to_fields"]
         self.null_if_equal = kwargs.pop("null_if_equal", [])
-        self.nullable_fields = kwargs.pop("nullable_fields", [])
+        nullable_fields = kwargs.pop("nullable_fields", {})
+        if not isinstance(nullable_fields, dict):
+            nullable_fields = {v: None for v in nullable_fields}
+        self.nullable_fields = nullable_fields
+
         # a list of tuple : (fieldnaem, value) . if fielname = value, then the field react as if fieldnaem_id = None
         self._raw_fields = self.compute_to_fields(to_fields)
         # hiro nakamura should have said «very bad guy. you are vilain»

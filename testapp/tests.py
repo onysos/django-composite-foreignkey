@@ -351,4 +351,13 @@ class TestToNone(TestCase):
         c.save()
         self.assertIsNotNone(c.company)
         self.assertIsNone(c.representant)
-        self.assertIsNone(c.cod_rep)
+        self.assertEqual(c.cod_rep, "")
+
+    def test_inital_value_to_related(self):
+        r = Representant.objects.get(pk=1)
+        c = Customer.objects.create(representant=r, name="test", customer_id=34)
+        self.assertEqual(r.cod_rep, c.cod_rep)
+
+    def test_inital_value_to_nullable(self):
+        c = Customer.objects.create(representant=None, name="test", customer_id=34, company=1)
+        self.assertEqual("", c.cod_rep)

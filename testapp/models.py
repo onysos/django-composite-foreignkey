@@ -56,7 +56,11 @@ class Customer(models.Model):
     representant = CompositeForeignKey(Representant, on_delete=CASCADE, null=True, to_fields=[
         "company",
         "cod_rep",
-    ], nullable_fields=["cod_rep"])
+    ], nullable_fields={"cod_rep": ""},
+       null_if_equal=[  # if either of the fields company or customer is -1, ther can't have address
+           ("cod_rep", ""),
+       ]
+    )
 
     class Meta(object):
         unique_together = [
