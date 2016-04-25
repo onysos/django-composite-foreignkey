@@ -11,5 +11,6 @@ Contents:
    installation
    quickstart
    contributing
+   issues
    readme
 
