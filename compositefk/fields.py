@@ -235,8 +235,11 @@ class CompositeForeignKey(ForeignObject):
     def db_parameters(self, connection):
         return {"type": None, "check": None}
 
-    def contribute_to_class(self, cls, name, virtual_only=False):
-        super(ForeignObject, self).contribute_to_class(cls, name, virtual_only=virtual_only)
+    def contribute_to_class(self, cls, name, 
+                            _only=False):
+        super(ForeignObject, self).contribute_to_class(cls, name
+                                                        #, virtual_only=virtual_only
+                                                      )
         setattr(cls, self.name, CompositeForwardManyToOneDescriptor(self))
 
     def get_instance_value_for_fields(self, instance, fields):
