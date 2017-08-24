@@ -299,7 +299,9 @@ class CompositePart(object):
         return "%s(%r)" % (self.__class__.__name__, self.value)
 
     def __eq__(self, other):
-        return repr(self) == repr(other)
+        if self.__class__ != other.__class__:
+            return False
+        return self.value == other.value
 
     def get_lookup(self, main_field, for_remote, alias):
         """
