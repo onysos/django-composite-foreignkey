@@ -298,6 +298,11 @@ class CompositePart(object):
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.value)
 
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        return self.value == other.value
+
     def get_lookup(self, main_field, for_remote, alias):
         """
         create a fake field for the lookup capability
