@@ -68,6 +68,8 @@ class CompositeForeignKey(ForeignObject):
                 pass
             return res
 
+        wrapper._original_fn = original
+
         return wrapper
 
     def check(self, **kwargs):
@@ -191,6 +193,8 @@ class CompositeForeignKey(ForeignObject):
     def deconstruct(self):
         name, path, args, kwargs = super(CompositeForeignKey, self).deconstruct()
         del kwargs["from_fields"]
+        if "on_delete" in kwargs:
+            kwargs["on_delete"] = kwargs["on_delete"]._original_fn
         kwargs["to_fields"] = self._raw_fields
         kwargs["null_if_equal"] = self.null_if_equal
         return name, path, args, kwargs
