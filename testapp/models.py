@@ -10,7 +10,13 @@ from collections import OrderedDict
 import django.db.models as models
 from django.db.models.deletion import CASCADE
 
-from compositefk.fields import CompositeForeignKey, RawFieldValue, LocalFieldValue, CompositeOneToOneField
+from compositefk.fields import (
+    CompositeForeignKey,
+    RawFieldValue,
+    LocalFieldValue,
+    CompositeOneToOneField,
+    FunctionBasedFieldValue,
+)
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -29,10 +35,13 @@ class Address(models.Model):
         ]
 
 
-
 class Representant(models.Model):
     company = models.IntegerField()
     cod_rep = models.CharField(max_length=2)
+
+
+def get_local_type_tiers():
+    return 'C'
 
 
 class Customer(models.Model):
@@ -52,6 +61,21 @@ class Customer(models.Model):
         ("company", -1),
         ("customer_id", -1)
     ])
+
+    local_address = CompositeForeignKey(
+        Address,
+        on_delete=CASCADE,
+        null=True,
+        to_fields=OrderedDict([
+            ("company", LocalFieldValue("company")),
+            ("tiers_id", "customer_id"),
+            ("type_tiers", FunctionBasedFieldValue(get_local_type_tiers))
+        ]),
+        null_if_equal=[  # if either of the fields company or customer is -1, ther can't have address
+            ("company", -1),
+            ("customer_id", -1)],
+        related_name='customer_local',
+    )
 
     representant = CompositeForeignKey(Representant, on_delete=CASCADE, null=True, to_fields=[
         "company",

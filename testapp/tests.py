@@ -5,6 +5,11 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 try:
+    from unittest import mock
+except ImportError:
+    from mock import mock
+
+try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
@@ -16,7 +21,6 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.loader import MigrationLoader
-from django.db.models.deletion import CASCADE
 
 try:
     from django.db.migrations.questioner import NonInteractiveMigrationQuestioner
@@ -158,6 +162,23 @@ class TestExtraFilterRawValue(TestCase):
         address = Address.objects.get(pk=1)
         self.assertEqual(customer.address, address)
 
+
+class TestExtraFilterFunctionBasedValue(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    @mock.patch.object(Customer.local_address.field._raw_fields['type_tiers'], '_func')
+    def test_filtered_values(self, mock_get_local_type_tiers):
+        mock_get_local_type_tiers.return_value = 'C'
+        customer = Customer.objects.get(pk=1)
+        address = Address.objects.get(pk=1)
+        self.assertEqual(customer.local_address, address)
+
+        mock_get_local_type_tiers.return_value = 'S'
+        customer = Customer.objects.get(pk=1)
+        address = Address.objects.get(pk=2)
+        self.assertEqual(customer.local_address, address)
+
+
 class TestNullIfEqual(TestCase):
     fixtures = ["all_fixtures.json"]
 
@@ -236,6 +257,7 @@ class TestDeconstuct(TestCase):
                 migration_string = writer.as_string()
                 self.assertNotEqual(migration_string, "")
 
+
 class TestOneToOne(TestCase):
     fixtures = ["all_fixtures.json"]
     def test_set(self):
@@ -309,6 +331,7 @@ address_3;
 representant_1;
 representant_2;
 customer_1;
+customer_1  -> address_1;
 customer_1  -> address_1;
 customer_1  -> representant_1;
 customer_2;

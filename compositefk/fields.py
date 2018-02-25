@@ -332,6 +332,33 @@ class RawFieldValue(CompositePart):
         return lookup_class(for_remote.get_col(alias), self.value)
 
 
+class FunctionBasedFieldValue(RawFieldValue):
+    def __init__(self, func):
+        self._func = func
+
+    def deconstruct(self):
+        module_name = self.__module__
+        name = self.__class__.__name__
+        return (
+            '%s.%s' % (module_name, name),
+            (self._func,),
+            {}
+        )
+
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        return self._func == other._func
+
+    @property
+    def value(self):
+        return self._func()
+
+    @value.setter
+    def value(self):
+        pass
+
+
 class LocalFieldValue(CompositePart):
     """
     implicitly used, represent the value of a local field
