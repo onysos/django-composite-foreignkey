@@ -4,6 +4,8 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
+from random import random
+
 try:
     from unittest import mock
 except ImportError:
@@ -35,7 +37,7 @@ except ImportError:
     from django.db.models.fields.related import ForeignObjectRel
 
 from django.test.testcases import TestCase
-from compositefk.fields import CompositeForeignKey
+from compositefk.fields import CompositeForeignKey, RawFieldValue, FunctionBasedFieldValue
 from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber, Representant
 
 logger = logging.getLogger(__name__)
@@ -152,6 +154,43 @@ class TestLookupQuery(TestCase):
         a = Address.objects.get(pk=1)
         q = Address.objects.filter(customer__contacts__phonenumbers=p)
         self.assertEqual([a], list(q))
+
+
+class TestCompositePart(TestCase):
+    def test_raw_field_value_compare(self):
+        field1 = RawFieldValue('C')
+        field2 = RawFieldValue('C')
+        field3 = RawFieldValue('S')
+
+        self.assertEqual(field1, field2)
+        self.assertNotEqual(field1, field3)
+
+    @staticmethod
+    def _f1():
+        return random()
+
+    @staticmethod
+    def _f2():
+        return 1
+
+    @staticmethod
+    def _f3():
+        return 1
+
+    def test_functio_based_field_value_compare(self):
+        field1 = FunctionBasedFieldValue(self._f1)
+        field2 = FunctionBasedFieldValue(self._f1)
+        self.assertEqual(field1, field2)
+
+        field3 = FunctionBasedFieldValue(self._f2)
+        field4 = FunctionBasedFieldValue(self._f3)
+        self.assertNotEqual(field3, field4)
+
+    def test_classes_compare(self):
+        field1 = RawFieldValue('C')
+        field2 = FunctionBasedFieldValue(self._f1)
+        self.assertNotEqual(field1, field2)
+        self.assertNotEqual(field2, field1)
 
 
 class TestExtraFilterRawValue(TestCase):
