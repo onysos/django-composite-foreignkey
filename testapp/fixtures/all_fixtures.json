@@ -135,5 +135,33 @@
       "company": 2,
       "cod_rep": "DB"
     }
+  },
+  {
+    "model": "testapp.MultiLangSupplier",
+    "pk": 1,
+    "fields": {
+      "company": 1,
+      "supplier_id": 1
+    }
+  },
+  {
+    "model": "testapp.SupplierTranslations",
+    "pk": 1,
+    "fields": {
+      "master": 1,
+      "language_code": "en",
+      "name": "en_name",
+      "title": "en_title"
+    }
+  },
+  {
+    "model": "testapp.SupplierTranslations",
+    "pk": 2,
+    "fields": {
+      "master": 1,
+      "language_code": "ru",
+      "name": "ru_name",
+      "title": "ru_title"
+    }
   }
 ]

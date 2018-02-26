@@ -8,7 +8,7 @@ import logging
 from collections import OrderedDict
 
 import django.db.models as models
-from django.db.models.deletion import CASCADE
+from django.db.models.deletion import CASCADE, DO_NOTHING
 
 from compositefk.fields import (
     CompositeForeignKey,
@@ -149,3 +149,40 @@ class BModel(models.Model):
     a = models.ForeignKey(AModel, null=True, on_delete=CASCADE)
 
 
+from django.conf import global_settings
+from django.utils.translation import get_language
+
+
+class MultiLangSupplier(models.Model):
+    company = models.IntegerField()
+    supplier_id = models.IntegerField()
+
+
+class SupplierTranslations(models.Model):
+    master = models.ForeignKey(
+        MultiLangSupplier,
+        on_delete=CASCADE,
+        related_name='translations',
+        null=True,
+    )
+    language_code = models.CharField(
+        max_length=255,
+        choices=global_settings.LANGUAGES,
+    )
+    name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ('language_code', 'master')
+
+
+active_translations = CompositeForeignKey(
+    SupplierTranslations,
+    on_delete=DO_NOTHING,
+    to_fields={
+        'master_id': 'id',
+        'language_code': FunctionBasedFieldValue(get_language)
+    })
+
+
+active_translations.contribute_to_class(MultiLangSupplier, 'active_translations')

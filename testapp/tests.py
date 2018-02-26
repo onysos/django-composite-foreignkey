@@ -6,6 +6,8 @@ from __future__ import unicode_literals, print_function, absolute_import
 
 from random import random
 
+from django.utils import translation
+
 try:
     from unittest import mock
 except ImportError:
@@ -38,7 +40,17 @@ except ImportError:
 
 from django.test.testcases import TestCase
 from compositefk.fields import CompositeForeignKey, RawFieldValue, FunctionBasedFieldValue
-from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber, Representant
+from testapp.models import (
+    Customer,
+    Contact,
+    Address,
+    Extra,
+    AModel,
+    BModel,
+    PhoneNumber,
+    Representant,
+    MultiLangSupplier,
+)
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -217,6 +229,12 @@ class TestExtraFilterFunctionBasedValue(TestCase):
         address = Address.objects.get(pk=2)
         self.assertEqual(customer.local_address, address)
 
+    def test_filtered_values_with_translation_activate(self):
+        with translation.override('en'):
+            self.assertEqual(MultiLangSupplier.objects.get(id=1).active_translations.name, 'en_name')
+        with translation.override('ru'):
+            self.assertEqual(MultiLangSupplier.objects.get(id=1).active_translations.name, 'ru_name')
+
 
 class TestNullIfEqual(TestCase):
     fixtures = ["all_fixtures.json"]
@@ -310,7 +328,6 @@ class TestOneToOne(TestCase):
         self.assertEqual(c.extra, e)
         self.assertEqual(e.customer, c)
 
-
     def test_lookup(self):
         c = Customer.objects.all().get(pk=1)
         e = Extra(sales_revenue=17.35, customer=c)
@@ -339,7 +356,6 @@ class TestDeletion(TestCase):
         self.assertFalse(AModel.objects.filter(pk=a.pk).exists())
         self.assertFalse(BModel.objects.filter(pk=c.pk).exists())
 
-
     def test_ondelete_cascade(self):
         c = Customer.objects.get(pk=1)
         a = c.address
@@ -348,6 +364,7 @@ class TestDeletion(TestCase):
         a.delete()
         self.assertFalse(Address.objects.filter(pk=a.pk).exists())
         self.assertFalse(Customer.objects.filter(pk=c.pk).exists())
+
 
 class TestmanagementCommand(TestCase):
     fixtures = ["all_fixtures.json"]
@@ -364,6 +381,8 @@ class TestmanagementCommand(TestCase):
 { rank=same; customer_1;customer_2;customer_3;customer_4;customer_5; }
 { rank=same; contact_1;contact_2; }
 { rank=same; phonenumber_1; }
+{ rank=same; multilangsupplier_1; }
+{ rank=same; suppliertranslations_1;suppliertranslations_2; }
 address_1;
 address_2;
 address_3;
@@ -384,6 +403,11 @@ contact_2;
 contact_2  -> customer_1;
 phonenumber_1;
 phonenumber_1  -> contact_2;
+multilangsupplier_1;
+suppliertranslations_1;
+suppliertranslations_1  -> multilangsupplier_1;
+suppliertranslations_2;
+suppliertranslations_2  -> multilangsupplier_1;
 }
 """, result)
 

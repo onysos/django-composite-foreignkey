@@ -201,7 +201,7 @@ We also can refer by CompositeForeignKey in more flexible way using FunctionBase
 .. code:: python
 
     from django.conf import global_settings
-    from django.utils.translation import get_language
+    from django.utils import translation
 
 
     class Supplier(models.Model):
@@ -209,8 +209,13 @@ We also can refer by CompositeForeignKey in more flexible way using FunctionBase
         supplier_id = models.IntegerField()
 
 
-    class SupplierTranslations(TranslatedFieldsModel):
-        master = models.ForeignKey(Supplier, related_name='translations', null=True)
+    class SupplierTranslations(models.Model):
+        master = models.ForeignKey(
+            Supplier,
+            on_delete=CASCADE,
+            related_name='translations',
+            null=True,
+        )
         language_code = models.CharField(max_length=255, choices=global_settings.LANGUAGES)
         name = models.CharField(max_length=255)
         title = models.CharField(max_length=255)
@@ -224,7 +229,7 @@ We also can refer by CompositeForeignKey in more flexible way using FunctionBase
         on_delete=DO_NOTHING,
         to_fields={
             'master_id': 'id',
-            'language_code': FunctionBasedFieldValue(get_language)
+            'language_code': FunctionBasedFieldValue(translation.get_language)
         })
 
 
@@ -243,8 +248,8 @@ which language was activated by translation.activate(..):
     print Supplier.objects.get(id=1).active_translations.name
 
 output should be:
-'en_language_name'
-'your_language_name'
+ * 'en_language_name'
+ * 'your_language_name'
 
 Treate specific values as None
 ------------------------------
