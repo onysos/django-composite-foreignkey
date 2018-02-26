@@ -5,7 +5,12 @@
 from __future__ import unicode_literals, print_function, absolute_import
 import logging
 
-
+from compositefk.compat import (
+    get_remote_field,
+    set_cached_value_by_descriptor,
+    set_cached_value_by_field,
+    get_cached_value,
+)
 
 try:
     from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
@@ -30,30 +35,19 @@ class CompositeForwardManyToOneDescriptor(ForwardManyToOneDescriptor):
             # populated the cache, then we don't care - we're only accessing
             # the object to invalidate the accessor cache, so there's no
             # need to populate the cache just to expire it again.
-            related = getattr(instance, self.cache_name, None)
+            related = get_cached_value(instance, self, None)
 
             # If we've got an old related object, we need to clear out its
             # cache. This cache also might not exist if the related object
             # hasn't been accessed yet.
             if related is not None:
-                try:
-                    related_field = self.field.remote_field
-                except AttributeError:
-                    related_field = self.field.rel
-                setattr(related, related_field.get_cache_name(), None)
+                related_field = get_remote_field(self.field)
+                set_cached_value_by_field(related, related_field, None)
 
             # ##### only original part
-
             for lh_field_name, none_value in self.field.nullable_fields.items():
                 setattr(instance, lh_field_name, none_value)
 
-
             # Set the related instance cache used by __get__ to avoid a SQL query
             # when accessing the attribute we just set.
-            setattr(instance, self.cache_name, value)
-
-            # If this is a one-to-one relation, set the reverse accessor cache on
-            # the related object to the current instance to avoid an extra SQL
-            # query if it's accessed later on.
-            if value is not None and not self.field.remote_field.multiple:
-                setattr(value, self.field.remote_field.get_cache_name(), instance)
+            set_cached_value_by_descriptor(instance, self, None)

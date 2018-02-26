@@ -4,6 +4,15 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
+from random import random
+
+from django.utils import translation
+
+try:
+    from unittest import mock
+except ImportError:
+    from mock import mock
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -16,7 +25,6 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db.migrations.autodetector import MigrationAutodetector
 from django.db.migrations.loader import MigrationLoader
-from django.db.models.deletion import CASCADE
 
 try:
     from django.db.migrations.questioner import NonInteractiveMigrationQuestioner
@@ -31,8 +39,18 @@ except ImportError:
     from django.db.models.fields.related import ForeignObjectRel
 
 from django.test.testcases import TestCase
-from compositefk.fields import CompositeForeignKey
-from testapp.models import Customer, Contact, Address, Extra, AModel, BModel, PhoneNumber, Representant
+from compositefk.fields import CompositeForeignKey, RawFieldValue, FunctionBasedFieldValue
+from testapp.models import (
+    Customer,
+    Contact,
+    Address,
+    Extra,
+    AModel,
+    BModel,
+    PhoneNumber,
+    Representant,
+    MultiLangSupplier,
+)
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -150,6 +168,43 @@ class TestLookupQuery(TestCase):
         self.assertEqual([a], list(q))
 
 
+class TestCompositePart(TestCase):
+    def test_raw_field_value_compare(self):
+        field1 = RawFieldValue('C')
+        field2 = RawFieldValue('C')
+        field3 = RawFieldValue('S')
+
+        self.assertEqual(field1, field2)
+        self.assertNotEqual(field1, field3)
+
+    @staticmethod
+    def _f1():
+        return random()
+
+    @staticmethod
+    def _f2():
+        return 1
+
+    @staticmethod
+    def _f3():
+        return 1
+
+    def test_functio_based_field_value_compare(self):
+        field1 = FunctionBasedFieldValue(self._f1)
+        field2 = FunctionBasedFieldValue(self._f1)
+        self.assertEqual(field1, field2)
+
+        field3 = FunctionBasedFieldValue(self._f2)
+        field4 = FunctionBasedFieldValue(self._f3)
+        self.assertNotEqual(field3, field4)
+
+    def test_classes_compare(self):
+        field1 = RawFieldValue('C')
+        field2 = FunctionBasedFieldValue(self._f1)
+        self.assertNotEqual(field1, field2)
+        self.assertNotEqual(field2, field1)
+
+
 class TestExtraFilterRawValue(TestCase):
     fixtures = ["all_fixtures.json"]
 
@@ -157,6 +212,29 @@ class TestExtraFilterRawValue(TestCase):
         customer = Customer.objects.get(pk=1)
         address = Address.objects.get(pk=1)
         self.assertEqual(customer.address, address)
+
+
+class TestExtraFilterFunctionBasedValue(TestCase):
+    fixtures = ["all_fixtures.json"]
+
+    @mock.patch.object(Customer.local_address.field._raw_fields['type_tiers'], '_func')
+    def test_filtered_values(self, mock_get_local_type_tiers):
+        mock_get_local_type_tiers.return_value = 'C'
+        customer = Customer.objects.get(pk=1)
+        address = Address.objects.get(pk=1)
+        self.assertEqual(customer.local_address, address)
+
+        mock_get_local_type_tiers.return_value = 'S'
+        customer = Customer.objects.get(pk=1)
+        address = Address.objects.get(pk=2)
+        self.assertEqual(customer.local_address, address)
+
+    def test_filtered_values_with_translation_activate(self):
+        with translation.override('en'):
+            self.assertEqual(MultiLangSupplier.objects.get(id=1).active_translations.name, 'en_name')
+        with translation.override('ru'):
+            self.assertEqual(MultiLangSupplier.objects.get(id=1).active_translations.name, 'ru_name')
+
 
 class TestNullIfEqual(TestCase):
     fixtures = ["all_fixtures.json"]
@@ -236,6 +314,7 @@ class TestDeconstuct(TestCase):
                 migration_string = writer.as_string()
                 self.assertNotEqual(migration_string, "")
 
+
 class TestOneToOne(TestCase):
     fixtures = ["all_fixtures.json"]
     def test_set(self):
@@ -248,7 +327,6 @@ class TestOneToOne(TestCase):
 
         self.assertEqual(c.extra, e)
         self.assertEqual(e.customer, c)
-
 
     def test_lookup(self):
         c = Customer.objects.all().get(pk=1)
@@ -278,7 +356,6 @@ class TestDeletion(TestCase):
         self.assertFalse(AModel.objects.filter(pk=a.pk).exists())
         self.assertFalse(BModel.objects.filter(pk=c.pk).exists())
 
-
     def test_ondelete_cascade(self):
         c = Customer.objects.get(pk=1)
         a = c.address
@@ -287,6 +364,7 @@ class TestDeletion(TestCase):
         a.delete()
         self.assertFalse(Address.objects.filter(pk=a.pk).exists())
         self.assertFalse(Customer.objects.filter(pk=c.pk).exists())
+
 
 class TestmanagementCommand(TestCase):
     fixtures = ["all_fixtures.json"]
@@ -303,12 +381,15 @@ class TestmanagementCommand(TestCase):
 { rank=same; customer_1;customer_2;customer_3;customer_4;customer_5; }
 { rank=same; contact_1;contact_2; }
 { rank=same; phonenumber_1; }
+{ rank=same; multilangsupplier_1; }
+{ rank=same; suppliertranslations_1;suppliertranslations_2; }
 address_1;
 address_2;
 address_3;
 representant_1;
 representant_2;
 customer_1;
+customer_1  -> address_1;
 customer_1  -> address_1;
 customer_1  -> representant_1;
 customer_2;
@@ -322,6 +403,11 @@ contact_2;
 contact_2  -> customer_1;
 phonenumber_1;
 phonenumber_1  -> contact_2;
+multilangsupplier_1;
+suppliertranslations_1;
+suppliertranslations_1  -> multilangsupplier_1;
+suppliertranslations_2;
+suppliertranslations_2  -> multilangsupplier_1;
 }
 """, result)
 

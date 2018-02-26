@@ -9,12 +9,11 @@ from functools import wraps
 
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
-from django.db.models.expressions import Value
 from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignObject
 from django.db.models.sql.where import WhereNode, AND
-from django.utils import six
 
+from compositefk.compat import get_remote_field
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
 
 try:
@@ -239,8 +238,8 @@ class CompositeForeignKey(ForeignObject):
     def db_parameters(self, connection):
         return {"type": None, "check": None}
 
-    def contribute_to_class(self, cls, name, virtual_only=False):
-        super(ForeignObject, self).contribute_to_class(cls, name, virtual_only=virtual_only)
+    def contribute_to_class(self, cls, name, **kwargs):
+        super(ForeignObject, self).contribute_to_class(cls, name, **kwargs)
         setattr(cls, self.name, CompositeForwardManyToOneDescriptor(self))
 
     def get_instance_value_for_fields(self, instance, fields):
@@ -275,7 +274,7 @@ class CompositeOneToOneField(CompositeForeignKey):
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
         super(CompositeOneToOneField, self).__init__(to, **kwargs)
-        self.rel.multiple = False
+        get_remote_field(self).multiple = False
 
     def deconstruct(self):
         name, path, args, kwargs = super(CompositeOneToOneField, self).deconstruct()
@@ -331,6 +330,33 @@ class RawFieldValue(CompositePart):
         """
         lookup_class = for_remote.get_lookup("exact")
         return lookup_class(for_remote.get_col(alias), self.value)
+
+
+class FunctionBasedFieldValue(RawFieldValue):
+    def __init__(self, func):
+        self._func = func
+
+    def deconstruct(self):
+        module_name = self.__module__
+        name = self.__class__.__name__
+        return (
+            '%s.%s' % (module_name, name),
+            (self._func,),
+            {}
+        )
+
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return False
+        return self._func == other._func
+
+    @property
+    def value(self):
+        return self._func()
+
+    @value.setter
+    def value(self):
+        pass
 
 
 class LocalFieldValue(CompositePart):

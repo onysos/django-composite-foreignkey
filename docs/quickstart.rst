@@ -196,6 +196,60 @@ so the class Supplier could be wrote:
             "type_tiers": RawFieldValue("S")
         })
 
+We also can refer by CompositeForeignKey in more flexible way using FunctionBasedFieldValue instead of RawFieldValue:
+
+.. code:: python
+
+    from django.conf import global_settings
+    from django.utils import translation
+
+
+    class Supplier(models.Model):
+        company = models.IntegerField()
+        supplier_id = models.IntegerField()
+
+
+    class SupplierTranslations(models.Model):
+        master = models.ForeignKey(
+            Supplier,
+            on_delete=CASCADE,
+            related_name='translations',
+            null=True,
+        )
+        language_code = models.CharField(max_length=255, choices=global_settings.LANGUAGES)
+        name = models.CharField(max_length=255)
+        title = models.CharField(max_length=255)
+
+        class Meta:
+            unique_together = ('language_code', 'master')
+
+
+    active_translations = CompositeForeignKey(
+        SupplierTranslations,
+        on_delete=DO_NOTHING,
+        to_fields={
+            'master_id': 'id',
+            'language_code': FunctionBasedFieldValue(translation.get_language)
+        })
+
+
+    active_translations.contribute_to_class(Supplier, 'active_translations')
+
+
+in this example, the Supplier Model joins with SupplierTranslations in current active language and
+supplier_instance.active_translations.name will return different names depend on
+which language was activated by translation.activate(..):
+
+.. code:: python
+
+    translation.activate('en')
+    print Supplier.objects.get(id=1).active_translations.name
+    translation.activate('your_language_code')
+    print Supplier.objects.get(id=1).active_translations.name
+
+output should be:
+ * 'en_language_name'
+ * 'your_language_name'
 
 Treate specific values as None
 ------------------------------
