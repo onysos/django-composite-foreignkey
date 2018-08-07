@@ -7,8 +7,10 @@ from __future__ import unicode_literals, print_function, absolute_import
 import logging
 from collections import OrderedDict
 
-import django.db.models as models
+from django.db import models
 from django.db.models.deletion import CASCADE, DO_NOTHING
+from django.conf import global_settings
+from django.utils.translation import get_language
 
 from compositefk.fields import (
     CompositeForeignKey,
@@ -119,7 +121,6 @@ class Contact(models.Model):
     ]))
 
 
-
 class PhoneNumber(models.Model):
     num = models.CharField(max_length=32)
     type_number = models.IntegerField()
@@ -147,10 +148,6 @@ class AModel(models.Model):
 
 class BModel(models.Model):
     a = models.ForeignKey(AModel, null=True, on_delete=CASCADE)
-
-
-from django.conf import global_settings
-from django.utils.translation import get_language
 
 
 class MultiLangSupplier(models.Model):

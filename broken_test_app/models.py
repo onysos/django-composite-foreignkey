@@ -14,6 +14,7 @@ from django.db.models.deletion import CASCADE
 from compositefk.fields import CompositeForeignKey, RawFieldValue
 from testapp.models import Address
 
+
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
 
@@ -28,9 +29,9 @@ class TempModel(models.Model):
         ("don'texists", 37),
     ])
 
+
 class BadModelsFieldsOrder(models.Model):
     company = models.IntegerField()
-
 
     address = CompositeForeignKey(Address, on_delete=CASCADE, null=True, to_fields=OrderedDict([
         ("company", "company"),
@@ -42,10 +43,10 @@ class BadModelsFieldsOrder(models.Model):
     # set up by the address field
     customer_id = models.IntegerField()
 
+
 class BadIdeaModel(models.Model):
     n = models.CharField(max_length=2)
     address = CompositeForeignKey(Address, on_delete=CASCADE, null=False, to_fields={
         "tiers_id": "n",
-        "company": "address",# recursive dependency
+        "company": "address",  # recursive dependency
     })
-

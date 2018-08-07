@@ -109,17 +109,17 @@ class TestGetterSetter(TestCase):
 
 class TestForeignKeyStruct(TestCase):
     def test_model_fields(self):
-        f = Contact._meta.get_field("customer")
-        self.assertIsInstance(f, CompositeForeignKey)
-        l = Contact._meta.get_fields()
-        self.assertIn("customer", [field.name for field in l])
+        field = Contact._meta.get_field("customer")
+        self.assertIsInstance(field, CompositeForeignKey)
+        fields = Contact._meta.get_fields()
+        self.assertIn("customer", [field.name for field in fields])
 
-        f2 = Customer._meta.get_field("contacts")
-        self.assertIsInstance(f2, ForeignObjectRel)
-        l2 = Customer._meta.get_fields()
-        self.assertIn("contacts", [field.name for field in l2])
+        field2 = Customer._meta.get_field("contacts")
+        self.assertIsInstance(field2, ForeignObjectRel)
+        fields2 = Customer._meta.get_fields()
+        self.assertIn("contacts", [field.name for field in fields2])
 
-        self.assertIsNone(f.db_type(None))
+        self.assertIsNone(field.db_type(None))
 
 
 class TestLookupQuery(TestCase):
@@ -136,36 +136,35 @@ class TestLookupQuery(TestCase):
         self.assertEqual(1, Customer.objects.filter(contacts=contact).count())
 
     def test_deep_forward(self):
-        c = Customer.objects.get(pk=1)
-        a = c.address
-        self.assertEqual([c], list(Customer.objects.filter(address__in=[a])))
+        customer = Customer.objects.get(pk=1)
+        address = customer.address
+        self.assertEqual([customer], list(Customer.objects.filter(address__in=[address])))
 
     def test_deep_backward(self):
-        c = Customer.objects.get(pk=1)
-        a = c.address
-        l = list(Address.objects.filter(customer__in=[c]))
-        self.assertEqual([a], l)
+        customer = Customer.objects.get(pk=1)
+        address = customer.address
+        addresses = list(Address.objects.filter(customer__in=[customer]))
+        self.assertEqual([address], addresses)
 
     def test_very_deep_mixed_forward(self):
-        p = PhoneNumber.objects.get(pk=1)
-        c = Contact.objects.get(pk=2)
-        cu = Customer.objects.get(pk=1)
-        a = Address.objects.get(pk=1)
-        self.assertEqual([p], list(PhoneNumber.objects.filter(contact=c)))
-        self.assertEqual([p], list(PhoneNumber.objects.filter(contact__customer=cu)))
+        phonenumber = PhoneNumber.objects.get(pk=1)
+        contact = Contact.objects.get(pk=2)
+        customer = Customer.objects.get(pk=1)
+        self.assertEqual([phonenumber], list(PhoneNumber.objects.filter(contact=contact)))
+        self.assertEqual([phonenumber], list(PhoneNumber.objects.filter(contact__customer=customer)))
 
     def test_very_deep_optimized_forward(self):
         # this query is optimized by django
-        p = PhoneNumber.objects.get(pk=1)
-        a = Address.objects.get(pk=1)
-        q = PhoneNumber.objects.filter(contact__customer__address=a)
+        PhoneNumber.objects.get(pk=1)
+        address = Address.objects.get(pk=1)
+        PhoneNumber.objects.filter(contact__customer__address=address)
 
     def test_very_deep_optimized_backward(self):
         # this query is optimized by django
-        p = PhoneNumber.objects.get(pk=1)
-        a = Address.objects.get(pk=1)
-        q = Address.objects.filter(customer__contacts__phonenumbers=p)
-        self.assertEqual([a], list(q))
+        phonenumber = PhoneNumber.objects.get(pk=1)
+        address = Address.objects.get(pk=1)
+        addresses = Address.objects.filter(customer__contacts__phonenumbers=phonenumber)
+        self.assertEqual([address], list(addresses))
 
 
 class TestCompositePart(TestCase):
@@ -242,15 +241,15 @@ class TestNullIfEqual(TestCase):
     def test_exist_fq_null_if_company_bad(self):
         # test that fk is None even if addr exist,
         # but the company is '   ' and this is bad
-        c = Customer.objects.get(pk=4)
-        self.assertIsNone(c.address)
+        customer = Customer.objects.get(pk=4)
+        self.assertIsNone(customer.address)
 
     def test_notexist_fq_null_if_company_bad(self):
         # test that fk is None. the addr don't exists in base
         # (bad but possible with bad database schema (legacy))
 
-        c = Customer.objects.get(pk=5)
-        self.assertIsNone(c.address)
+        customer = Customer.objects.get(pk=5)
+        self.assertIsNone(customer.address)
 
 
 class TestDeconstuct(TestCase):
@@ -274,7 +273,6 @@ class TestDeconstuct(TestCase):
         )
         self.assertListEqual(all_issues, [])
 
-
     def test_field_check_errors(self):
         with self.settings(INSTALLED_APPS=settings.INSTALLED_APPS + ("broken_test_app",)):
             self.maxDiff = None
@@ -286,7 +284,8 @@ class TestDeconstuct(TestCase):
             )
             self.assertListEqual([issue.id for issue in all_issues], [
                 'compositefk.E001', 'compositefk.E002', 'compositefk.E003',
-                'compositefk.E003', 'compositefk.E004', 'compositefk.E006', 'compositefk.E005' ])
+                'compositefk.E003', 'compositefk.E004', 'compositefk.E006', 'compositefk.E005',
+            ])
 
     def test_total_deconstruct(self):
         loader = MigrationLoader(None, load=True, ignore_no_migrations=True)
@@ -317,53 +316,54 @@ class TestDeconstuct(TestCase):
 
 class TestOneToOne(TestCase):
     fixtures = ["all_fixtures.json"]
-    def test_set(self):
-        c = Customer.objects.all().get(pk=1)
-        with self.assertRaises(Extra.DoesNotExist):
-            self.assertIsNone(c.extra)
-        e = Extra(sales_revenue=17.35, customer=c)
-        e.save()
-        c.refresh_from_db()
 
-        self.assertEqual(c.extra, e)
-        self.assertEqual(e.customer, c)
+    def test_set(self):
+        customer = Customer.objects.all().get(pk=1)
+        with self.assertRaises(Extra.DoesNotExist):
+            self.assertIsNone(customer.extra)
+        extra = Extra(sales_revenue=17.35, customer=customer)
+        extra.save()
+        customer.refresh_from_db()
+
+        self.assertEqual(customer.extra, extra)
+        self.assertEqual(extra.customer, customer)
 
     def test_lookup(self):
-        c = Customer.objects.all().get(pk=1)
-        e = Extra(sales_revenue=17.35, customer=c)
-        e.save()
+        customer = Customer.objects.all().get(pk=1)
+        extra = Extra(sales_revenue=17.35, customer=customer)
+        extra.save()
 
-        self.assertEqual(Extra.objects.get(customer__name=c.name), e)
+        self.assertEqual(Extra.objects.get(customer__name=customer.name), extra)
 
 
 class TestDeletion(TestCase):
     fixtures = ["all_fixtures.json"]
 
     def test_one_delete(self):
-        c = Customer.objects.get(pk=1)
-        c.delete()
+        customer = Customer.objects.get(pk=1)
+        customer.delete()
 
     def test_bulk_delete(self):
         Customer.objects.all().delete()
 
     def test_normal_delete(self):
         a = AModel.objects.create(n="plop")
-        c = BModel.objects.create(a=a)
+        customer = BModel.objects.create(a=a)
 
         self.assertTrue(AModel.objects.filter(pk=a.pk).exists())
-        self.assertTrue(BModel.objects.filter(pk=c.pk).exists())
+        self.assertTrue(BModel.objects.filter(pk=customer.pk).exists())
         a.delete()
         self.assertFalse(AModel.objects.filter(pk=a.pk).exists())
-        self.assertFalse(BModel.objects.filter(pk=c.pk).exists())
+        self.assertFalse(BModel.objects.filter(pk=customer.pk).exists())
 
     def test_ondelete_cascade(self):
-        c = Customer.objects.get(pk=1)
-        a = c.address
+        customer = Customer.objects.get(pk=1)
+        a = customer.address
         self.assertTrue(Address.objects.filter(pk=a.pk).exists())
-        self.assertTrue(Customer.objects.filter(pk=c.pk).exists())
+        self.assertTrue(Customer.objects.filter(pk=customer.pk).exists())
         a.delete()
         self.assertFalse(Address.objects.filter(pk=a.pk).exists())
-        self.assertFalse(Customer.objects.filter(pk=c.pk).exists())
+        self.assertFalse(Customer.objects.filter(pk=customer.pk).exists())
 
 
 class TestmanagementCommand(TestCase):
@@ -414,36 +414,37 @@ suppliertranslations_2  -> multilangsupplier_1;
     def test_app_not_exists(self):
         self.assertRaises(CommandError, call_command, "graph_datas", "doesnotexistsapp")
 
+
 class TestToNone(TestCase):
     fixtures = ["all_fixtures.json"]
 
     def test_value_to_something(self):
-        r = Representant.objects.get(pk=1)
-        c = Customer.objects.get(pk=2)
-        self.assertIsNone(c.representant)
-        self.assertIsNone(c.cod_rep)
-        c.representant = r
-        c.save()
-        self.assertEqual(c.representant, r)
-        self.assertEqual(c.cod_rep, "DB")
+        representant = Representant.objects.get(pk=1)
+        customer = Customer.objects.get(pk=2)
+        self.assertIsNone(customer.representant)
+        self.assertIsNone(customer.cod_rep)
+        customer.representant = representant
+        customer.save()
+        self.assertEqual(customer.representant, representant)
+        self.assertEqual(customer.cod_rep, "DB")
 
     def test_value_to_none(self):
-        r = Representant.objects.get(pk=1)
-        c = Customer.objects.get(pk=1)
+        representant = Representant.objects.get(pk=1)
+        customer = Customer.objects.get(pk=1)
 
-        self.assertEqual(c.representant, r)
-        self.assertEqual(c.cod_rep, "DB")
-        c.representant = None
-        c.save()
-        self.assertIsNotNone(c.company)
-        self.assertIsNone(c.representant)
-        self.assertEqual(c.cod_rep, "")
+        self.assertEqual(customer.representant, representant)
+        self.assertEqual(customer.cod_rep, "DB")
+        customer.representant = None
+        customer.save()
+        self.assertIsNotNone(customer.company)
+        self.assertIsNone(customer.representant)
+        self.assertEqual(customer.cod_rep, "")
 
     def test_inital_value_to_related(self):
-        r = Representant.objects.get(pk=1)
-        c = Customer.objects.create(representant=r, name="test", customer_id=34)
-        self.assertEqual(r.cod_rep, c.cod_rep)
+        representant = Representant.objects.get(pk=1)
+        customer = Customer.objects.create(representant=representant, name="test", customer_id=34)
+        self.assertEqual(representant.cod_rep, customer.cod_rep)
 
     def test_inital_value_to_nullable(self):
-        c = Customer.objects.create(representant=None, name="test", customer_id=34, company=1)
-        self.assertEqual("", c.cod_rep)
+        customer = Customer.objects.create(representant=None, name="test", customer_id=34, company=1)
+        self.assertEqual("", customer.cod_rep)

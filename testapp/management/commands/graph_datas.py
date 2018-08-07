@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 def get_name(obj):
     return "%s_%s" % (obj._meta.model_name, obj.pk)
 
+
 class Command(BaseCommand):
     help = (
         "verry simple command that will output a dot diagraph "
@@ -31,10 +32,12 @@ class Command(BaseCommand):
         #
 
         def node_generator():
-            for app_config in app_configs: # type: django.apps.config.AppConfig
-                for model in app_config.get_models(): # type: django.db.models.Model
+            for app_config in app_configs:  # type: django.apps.config.AppConfig
+                for model in app_config.get_models():  # type: django.db.models.Model
                     if model.objects.count() > 100:
-                        raise CommandError("to many items in the model %s to be effective. this commande is a bad idea on your app")
+                        raise CommandError(
+                            "to many items in the model %s to be effective. this commande is a bad idea on your app"
+                        )
                     for obj in model.objects.all():
                         childs = []
                         for field in model._meta.get_fields():
@@ -51,10 +54,9 @@ class Command(BaseCommand):
 
         self.stdout.write(self.get_digraph(node_generator()))
 
-
     def get_digraph(self, objects):
         edges = []
-        nodes=OrderedDict()
+        nodes = OrderedDict()
         for obj, childs in objects:
             nodes.setdefault(obj.__class__, []).append(obj)
             edges.append(get_name(obj))
@@ -62,9 +64,8 @@ class Command(BaseCommand):
                 edges.append("%s  -> %s" % (get_name(obj), get_name(child)))
         return "digraph items_in_db {\n%s\n%s;\n}" % (
             "\n".join(
-                ("{ rank=same; %s; }"% ";".join(map(get_name, objs)))
+                ("{ rank=same; %s; }" % ";".join(map(get_name, objs)))
                 for objs in nodes.values()
             ),
             ";\n".join(edges)
         )
-
