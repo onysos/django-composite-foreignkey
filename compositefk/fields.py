@@ -10,16 +10,12 @@ from functools import wraps
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObject
+from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.db.models.sql.where import WhereNode, AND
+from django.utils.translation import ugettext_lazy as _
 
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
 
-try:
-    from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
-except ImportError:
-    from django.db.models.fields.related import SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor
-
-from django.utils.translation import ugettext_lazy as _
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'

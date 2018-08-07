@@ -5,16 +5,14 @@
 from __future__ import unicode_literals, print_function, absolute_import
 import logging
 
+from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
+
 from compositefk.compat import (
     set_cached_value_by_descriptor,
     set_cached_value_by_field,
     get_cached_value,
 )
 
-try:
-    from django.db.models.fields.related_descriptors import ForwardManyToOneDescriptor
-except ImportError:
-    from django.db.models.fields.related import ReverseSingleRelatedObjectDescriptor as ForwardManyToOneDescriptor
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
