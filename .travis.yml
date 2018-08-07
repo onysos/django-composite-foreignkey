@@ -1,73 +1,60 @@
 # We do not use sudo
 sudo: false
 
-# Python versions for matrix
 language: python
-python:
-  - "2.7"
-  - "3.2"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
+cache:
+  pip: true
+  directories:
+  - $TRAVIS_BUILD_DIR/.tox
 
-# Django versions for matrix
-env:
-  - DJANGO_VERSION='>=1.8,<1.9'
-  - DJANGO_VERSION='>=1.9,<1.10'
-  - DJANGO_VERSION='>=1.10,<1.11'
-  - DJANGO_VERSION='>=1.11,<2.0'
-  - DJANGO_VERSION='>=2.0,<2.1'
+matrix:
+  fast_finish: true
+  include:
+  - env: TOX_ENV=py27-dj111
+    python: 2.7
+  - env: TOX_ENV=py34-dj111
+    python: 3.4
+  - env: TOX_ENV=py35-dj111
+    python: 3.5
+  - env: TOX_ENV=py36-dj111
+    python: 3.6
+  - env: TOX_ENV=py34-dj20
+    python: 3.4
+  - env: TOX_ENV=py35-dj20
+    python: 3.5
+  - env: TOX_ENV=py36-dj20
+    python: 3.6
+  - env: TOX_ENV=py37-dj20
+    sudo: true
+    dist: xenial
+    python: 3.7
+  - env: TOX_ENV=py35-dj21
+    python: 3.5
+  - env: TOX_ENV=py36-dj21
+    python: 3.6
+  - env: TOX_ENV=py37-dj21
+    sudo: true
+    dist: xenial
+    python: 3.7
+  - env: TOX_ENV=py35-djmaster
+    python: 3.5
+  - env: TOX_ENV=py36-djmaster
+    python: 3.6
+  - env: TOX_ENV=py37-djmaster
+    sudo: true
+    dist: xenial
+    python: 3.7
+  - env: TOX_ENV=flake8
+    python: 3.6
+  allow_failures:
+  - env: TOX_ENV=py35-djmaster
+  - env: TOX_ENV=py36-djmaster
+  - env: TOX_ENV=py37-djmaster
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install -q Django$DJANGO_VERSION --quiet
-  - pip install  python-coveralls
-  # virtualenv>=14.0.0 has dropped Python 3.2 support
-  - travis_retry pip install "virtualenv<14.0.0" "tox>=1.9"
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.2' ]]; then travis_retry pip install 'coverage<4.0'; fi
-
+  - pip install -q -U tox
 
 # Command to run tests, e.g. python setup.py test
 script:
-  - coverage run --source=testapp,compositefk manage.py test
-
-
-# Report to coveralls
-after_success:
-  - coveralls
-
-matrix:
-  exclude:
-    - python: "2.7"
-      env: DJANGO_VERSION='>=2.0,<2.1'
-
-    - python: "3.6"
-      env: DJANGO_VERSION='>=1.8,<1.9'
-    - python: "3.6"
-      env: DJANGO_VERSION='>=1.9,<1.10'
-    - python: "3.6"
-      env: DJANGO_VERSION='>=1.10,<1.11'
-
-    - python: "3.5"
-      env: DJANGO_VERSION='>=1.8,<1.9'
-
-    - python: "3.2"
-      env: DJANGO_VERSION='>=1.9,<1.10'
-    - python: "3.3"
-      env: DJANGO_VERSION='>=1.9,<1.10'
-
-    - python: "3.2"
-      env: DJANGO_VERSION='>=1.10,<1.11'
-    - python: "3.3"
-      env: DJANGO_VERSION='>=1.10,<1.11'
-
-    - python: "3.2"
-      env: DJANGO_VERSION='>=1.11,<2.0'
-    - python: "3.3"
-      env: DJANGO_VERSION='>=1.11,<2.0'
-
-    - python: "3.2"
-      env: DJANGO_VERSION='>=2.0,<2.1'
-    - python: "3.3"
-      env: DJANGO_VERSION='>=2.0,<2.1'
+- tox -e "${TOX_ENV}"

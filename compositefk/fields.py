@@ -9,19 +9,13 @@ from functools import wraps
 
 from django.core import checks
 from django.core.exceptions import FieldDoesNotExist
-from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignObject
+from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.db.models.sql.where import WhereNode, AND
+from django.utils.translation import ugettext_lazy as _
 
-from compositefk.compat import get_remote_field
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
 
-try:
-    from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
-except ImportError:
-    from django.db.models.fields.related import SingleRelatedObjectDescriptor as ReverseOneToOneDescriptor
-
-from django.utils.translation import ugettext_lazy as _
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -86,7 +80,7 @@ class CompositeForeignKey(ForeignObject):
         try:
             dependents = list(self.local_related_fields)
         except FieldDoesNotExist:
-            return [] # the errors shall be raised befor by _check_recursion_field_dependecy
+            return []  # the errors shall be raised befor by _check_recursion_field_dependecy
 
         for field in self.model._meta.get_fields():
             try:
@@ -118,7 +112,8 @@ class CompositeForeignKey(ForeignObject):
                 if isinstance(f, CompositeForeignKey):
                     res.append(
                         checks.Error(
-                            "the field %s depend on the field %s which is another CompositeForeignKey" % (self.name, local_field),
+                            "the field %s depend on the field %s which is another CompositeForeignKey" %
+                            (self.name, local_field),
                             hint=None,
                             obj=self,
                             id='compositefk.E005',
@@ -165,7 +160,8 @@ class CompositeForeignKey(ForeignObject):
         if self.null_if_equal and not self.null:
             return [
                 checks.Error(
-                    "you must set null=True to field %s.%s if null_if_equal is given" % (self.model.__class__.__name__, self.name),
+                    "you must set null=True to field %s.%s if null_if_equal is given" %
+                    (self.model.__class__.__name__, self.name),
                     hint=None,
                     obj=self,
                     id='compositefk.E001',
@@ -202,7 +198,7 @@ class CompositeForeignKey(ForeignObject):
         return {
             k: v.value for k, v in self._raw_fields.items()
             if isinstance(v, RawFieldValue)
-            }
+        }
 
     def get_extra_restriction(self, where_class, alias, related_alias):
         constraint = WhereNode(connector=AND)
@@ -251,12 +247,13 @@ class CompositeForeignKey(ForeignObject):
         # '   ' into a true None to let django das as if it was None
         res = super(CompositeForeignKey, self).get_instance_value_for_fields(instance, fields)
         if self.null_if_equal:
-            cur_values_dict = dict(zip((f.name for f in fields), res))
             for field_name, exception_value in self.null_if_equal:
                 val = getattr(instance, field_name)
                 if val == exception_value:
                     # we have field_name that is equal to the bad value
-                    return (None,)  # currently, it is enouth since the django implementation check at first if there is a None in the result
+                    # currently, it is enouth since the django implementation check at first
+                    # if there is a None in the result
+                    return (None,)
         return res
 
 
@@ -274,7 +271,7 @@ class CompositeOneToOneField(CompositeForeignKey):
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
         super(CompositeOneToOneField, self).__init__(to, **kwargs)
-        get_remote_field(self).multiple = False
+        self.remote_field.multiple = False
 
     def deconstruct(self):
         name, path, args, kwargs = super(CompositeOneToOneField, self).deconstruct()
