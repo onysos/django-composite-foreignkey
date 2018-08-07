@@ -13,7 +13,6 @@ from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignObject
 from django.db.models.sql.where import WhereNode, AND
 
-from compositefk.compat import get_remote_field
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
 
 try:
@@ -274,7 +273,7 @@ class CompositeOneToOneField(CompositeForeignKey):
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
         super(CompositeOneToOneField, self).__init__(to, **kwargs)
-        get_remote_field(self).multiple = False
+        self.remote_field.multiple = False
 
     def deconstruct(self):
         name, path, args, kwargs = super(CompositeOneToOneField, self).deconstruct()

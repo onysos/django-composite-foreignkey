@@ -6,7 +6,6 @@ from __future__ import unicode_literals, print_function, absolute_import
 import logging
 
 from compositefk.compat import (
-    get_remote_field,
     set_cached_value_by_descriptor,
     set_cached_value_by_field,
     get_cached_value,
@@ -41,7 +40,7 @@ class CompositeForwardManyToOneDescriptor(ForwardManyToOneDescriptor):
             # cache. This cache also might not exist if the related object
             # hasn't been accessed yet.
             if related is not None:
-                related_field = get_remote_field(self.field)
+                related_field = self.field.remote_field
                 set_cached_value_by_field(related, related_field, None)
 
             # ##### only original part

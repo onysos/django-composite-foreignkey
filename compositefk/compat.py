@@ -1,13 +1,6 @@
 import django
 
 
-def get_remote_field(field):
-    if django.VERSION < (1, 9):
-        return field.rel
-    else:
-        return field.remote_field
-
-
 def get_cached_value(instance, descriptor, default=None):
     if django.VERSION < (2, 0):
         return getattr(instance, descriptor.cache_name, default)
