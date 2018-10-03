@@ -15,6 +15,7 @@ CompositeForeignKey
 
 
 .. code:: python
+    from compositefk.fields import CompositeForeignKey
 
     class Customer(models.Model):
 
@@ -43,6 +44,7 @@ CompositeOneToOneField
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
+    from compositefk.fields import CompositeForeignKey
 
     class Customer(models.Model):
 
@@ -124,6 +126,7 @@ Example advanced composite ForeignKey models
 --------------------------------------------
 
 .. code:: python
+    from compositefk.fields import CompositeForeignKey
 
     class Address(models.Model):
         company = models.IntegerField()
@@ -184,6 +187,7 @@ it is `LocalFieldValue("X")`.
 so the class Supplier could be wrote:
 
 .. code:: python
+    from compositefk.fields import CompositeForeignKey
 
     class Supplier(models.Model):
 
@@ -203,6 +207,7 @@ We also can refer by CompositeForeignKey in more flexible way using FunctionBase
     from django.conf import global_settings
     from django.utils import translation
 
+    from compositefk.fields import CompositeForeignKey
 
     class Supplier(models.Model):
         company = models.IntegerField()
@@ -261,6 +266,7 @@ with company = -1 since this is an old aplicative exception.
 you just have one thing to do that : null_if_equal
 
 .. code:: python
+    from compositefk.fields import CompositeForeignKey
 
     class Customer(models.Model):
 
