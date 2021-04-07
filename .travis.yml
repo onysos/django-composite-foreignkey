@@ -29,6 +29,30 @@ matrix:
     python: 3.6
   - env: TOX_ENV=py37-dj21
     python: 3.7
+  - env: TOX_ENV=py36-dj22
+    python: 3.6
+  - env: TOX_ENV=py37-dj22
+    python: 3.7
+  - env: TOX_ENV=py38-dj22
+    python: 3.8
+  - env: TOX_ENV=py39-dj22
+    python: 3.9
+  - env: TOX_ENV=py36-dj31
+    python: 3.6
+  - env: TOX_ENV=py37-dj31
+    python: 3.7
+  - env: TOX_ENV=py38-dj31
+    python: 3.8
+  - env: TOX_ENV=py39-dj31
+    python: 3.9
+  - env: TOX_ENV=py36-dj32
+    python: 3.6
+  - env: TOX_ENV=py37-dj32
+    python: 3.7
+  - env: TOX_ENV=py38-dj32
+    python: 3.8
+  - env: TOX_ENV=py39-dj32
+    python: 3.9
   - env: TOX_ENV=py38-djmain
     python: 3.8
   - env: TOX_ENV=py39-djmain
