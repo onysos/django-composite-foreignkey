@@ -1,6 +1,3 @@
-import django.conf.global_settings as DEFAULT_SETTINGS
-
-
 SECRET_KEY = 'FAKEDKEYDONOUSEITINREALLIFE'
 
 DATABASES = {
@@ -9,6 +6,8 @@ DATABASES = {
         'NAME': 'db.sq3',
     },
 }
+
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 INSTALLED_APPS = (
     # Default Django apps
@@ -23,7 +22,11 @@ INSTALLED_APPS = (
     'testapp',
 )
 
-MIDDLEWARE_CLASSES = getattr(DEFAULT_SETTINGS, 'MIDDLEWARE_CLASSES', [])
+MIDDLEWARE = [
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+]
 
 TEMPLATES = [
     {
@@ -40,6 +43,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.i18n',
                 'django.template.context_processors.media',
+                'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',

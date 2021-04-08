@@ -94,8 +94,8 @@ The full documentation is at http://django-composite-foreignkey.readthedocs.org/
 Requirements
 ------------
 
-- Python 2.7, 3.4, 3.5, 3.6, 3.7
-- Django 1.11, 2.0, 2.1
+- Python 2.7, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9
+- Django 1.11, 2.0, 2.1, 2.2, 3.1, 3.2
 
 Contributions and pull requests for other Django and Python versions are welcome.
 

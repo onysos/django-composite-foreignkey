@@ -32,8 +32,8 @@ class Command(BaseCommand):
         #
 
         def node_generator():
-            for app_config in app_configs:  # type: django.apps.config.AppConfig
-                for model in app_config.get_models():  # type: django.db.models.Model
+            for app_config in app_configs:  # type: django.apps.config.AppConfig  # noqa: F821
+                for model in app_config.get_models():  # type: django.db.models.Model  # noqa: F821
                     if model.objects.count() > 100:
                         raise CommandError(
                             "to many items in the model %s to be effective. this commande is a bad idea on your app"
