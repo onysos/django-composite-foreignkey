@@ -12,7 +12,6 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObject
 from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.db.models.sql.where import WhereNode, AND
-from django.utils.translation import ugettext_lazy as _
 
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
 
@@ -266,7 +265,7 @@ class CompositeOneToOneField(CompositeForeignKey):
 
     related_accessor_class = ReverseOneToOneDescriptor
 
-    description = _("One-to-one relationship")
+    description = "One-to-one relationship"
 
     def __init__(self, to, **kwargs):
         kwargs['unique'] = True
