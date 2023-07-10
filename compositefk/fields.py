@@ -12,10 +12,9 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db.models.fields.related import ForeignObject
 from django.db.models.fields.related_descriptors import ReverseOneToOneDescriptor
 from django.db.models.sql.where import WhereNode, AND
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from compositefk.related_descriptors import CompositeForwardManyToOneDescriptor
-
 
 logger = logging.getLogger(__name__)
 __author__ = 'darius.bernard'
@@ -41,11 +40,13 @@ class CompositeForeignKey(ForeignObject):
         if "on_delete" in kwargs:
             kwargs["on_delete"] = self.override_on_delete(kwargs["on_delete"])
 
-        kwargs["to_fields"], kwargs["from_fields"] = zip(*(
-            (k, v.value)
-            for k, v in self._raw_fields.items()
-            if v.is_local_field
-        ))
+        kwargs["to_fields"], kwargs["from_fields"] = zip(
+            *(
+                (k, v.value)
+                for k, v in self._raw_fields.items()
+                if v.is_local_field
+            )
+        )
         super(CompositeForeignKey, self).__init__(to, **kwargs)
 
     def override_on_delete(self, original):
@@ -100,7 +101,8 @@ class CompositeForeignKey(ForeignObject):
                             hint=None,
                             obj=self,
                             id='compositefk.E006',
-                        ))
+                        )
+                    )
                 break
         return res
 
@@ -200,7 +202,7 @@ class CompositeForeignKey(ForeignObject):
             if isinstance(v, RawFieldValue)
         }
 
-    def get_extra_restriction(self, where_class, alias, related_alias):
+    def get_extra_restriction(self, alias, related_alias):
         constraint = WhereNode(connector=AND)
         for remote, local in self._raw_fields.items():
             lookup = local.get_lookup(self, self.related_model._meta.get_field(remote), alias)
@@ -330,8 +332,10 @@ class RawFieldValue(CompositePart):
 
 
 class FunctionBasedFieldValue(RawFieldValue):
-    def __init__(self, func):
+
+    def __init__(self, func, value):
         self._func = func
+        super().__init__(value)
 
     def deconstruct(self):
         module_name = self.__module__

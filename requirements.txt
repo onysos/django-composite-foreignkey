@@ -1,4 +1,4 @@
-Django<2.1
+Django
 wheel
 sphinx
 mock
